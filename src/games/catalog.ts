@@ -40,6 +40,17 @@ export const games: GameListing[] = [
     controls: "Keyboard, or flap with your camera",
     soonReason: null,
   },
+  {
+    slug: "scrapyard-fps",
+    title: "Scrapyard",
+    genre: "Action",
+    tagline: "Five against five in a scrapyard. Team deathmatch with bots or friends.",
+    status: "playable",
+    origin: "https://scrapyard-fps.liveapps.dev",
+    poster: "/posters/scrapyard-fps.jpg",
+    controls: "Keyboard and mouse, or a controller",
+    soonReason: null,
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {

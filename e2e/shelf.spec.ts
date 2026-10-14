@@ -71,6 +71,24 @@ test("flap flap fly opens on its own origin", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Open on its own site" }).last()).toHaveAttribute("href", `${origin}/`);
 });
 
+test("scrapyard opens on its own origin", async ({ page }) => {
+  test.setTimeout(60_000);
+  const origin = "https://scrapyard-fps.liveapps.dev";
+  await page.route(`${origin}/**`, (route) => route.fulfill({
+    contentType: "text/html",
+    body: "<!doctype html><html><body>Scrapyard</body></html>",
+  }));
+  await page.goto("/");
+  const card = page.getByRole("article", { name: "Scrapyard" });
+  await card.getByRole("link", { name: "Play Scrapyard" }).click();
+  await expect(page).toHaveURL("/play/scrapyard-fps");
+  await expect(page.locator("[data-frame-state]")).toBeVisible({ timeout: 20_000 });
+  if (await page.locator("iframe").count()) {
+    await expect(page.locator("iframe")).toHaveAttribute("src", `${origin}/?hub=1`);
+  }
+  await expect(page.getByRole("link", { name: "Open on its own site" }).last()).toHaveAttribute("href", `${origin}/`);
+});
+
 test("a game that is not playable returns to discovery", async ({ page }) => {
   await page.goto("/play/vanguard");
   await expect(page).toHaveURL("/");
@@ -86,7 +104,7 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await page.getByLabel("Genre", { exact: true }).selectOption("Action");
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(2);
+  await expect(page.getByRole("article")).toHaveCount(3);
   await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await expect(page.getByRole("article", { name: "Velocity" })).toHaveCount(0);
@@ -129,7 +147,7 @@ test("game details support keyboard dismissal", async ({ page }) => {
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(2);
+  await expect(page.getByRole("article")).toHaveCount(3);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();

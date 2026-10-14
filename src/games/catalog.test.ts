@@ -30,8 +30,10 @@ describe("catalog", () => {
     expect(getGame("vanguard")).toBeUndefined();
     expect(playSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/");
     expect(frameSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/?hub=1");
+    expect(playSrc(getGame("scrapyard-fps")!)).toBe("https://scrapyard-fps.liveapps.dev/");
+    expect(frameSrc(getGame("scrapyard-fps")!)).toBe("https://scrapyard-fps.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();
-    expect(games.filter((game) => game.status === "playable")).toHaveLength(2);
+    expect(games.filter((game) => game.status === "playable")).toHaveLength(3);
   });
 
   test("accepts only a bare https origin", () => {
