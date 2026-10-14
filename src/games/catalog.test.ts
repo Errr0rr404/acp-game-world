@@ -27,8 +27,7 @@ describe("catalog", () => {
   test("frames Velocity at its own origin and nowhere else", () => {
     expect(playSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/");
     expect(frameSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/?hub=1");
-    expect(frameSrc(getGame("vanguard")!)).toBeNull();
-    expect(playSrc(getGame("vanguard")!)).toBeNull();
+    expect(getGame("vanguard")).toBeUndefined();
     expect(playSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/");
     expect(frameSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();

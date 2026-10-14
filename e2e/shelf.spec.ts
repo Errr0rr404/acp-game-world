@@ -14,10 +14,8 @@ test("discovery launches the real game address and keeps upcoming games unavaila
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "A good day to play." })).toBeVisible();
   const velocity = page.getByRole("article", { name: "Velocity" });
-  const vanguard = page.getByRole("article", { name: "Vanguard" });
+  await expect(page.getByRole("article", { name: "Vanguard" })).toHaveCount(0);
   await expect(velocity.getByRole("link", { name: "Play Velocity" })).toBeVisible();
-  await expect(vanguard.getByRole("link", { name: /Play/ })).toHaveCount(0);
-  await expect(vanguard.getByText("Coming soon")).toBeVisible();
   await velocity.getByRole("link", { name: "Play Velocity" }).click();
   await expect(page).toHaveURL("/play/velocity");
   await expect(page.locator("[data-frame-state]")).toBeVisible({ timeout: 20_000 });
@@ -88,9 +86,9 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await page.getByLabel("Genre", { exact: true }).selectOption("Action");
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(3);
-  await page.getByRole("button", { name: "Coming soon 1", exact: true }).click();
-  await expect(page.getByRole("article", { name: "Vanguard" })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await expect(page.getByRole("article", { name: "Velocity" })).toHaveCount(0);
 });
 
@@ -98,27 +96,26 @@ test("saving works without an account, persists and can be undone", async ({ pag
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Discover" }).click();
-  const vanguard = page.getByRole("article", { name: "Vanguard" });
-  await vanguard.getByRole("button", { name: "Save Vanguard", exact: true }).click();
-  await expect(vanguard.getByRole("button", { name: "Unsave Vanguard" })).toHaveAttribute("aria-pressed", "true");
+  const velocity = page.getByRole("article", { name: "Velocity" });
+  await velocity.getByRole("button", { name: "Save Velocity", exact: true }).click();
+  await expect(velocity.getByRole("button", { name: "Unsave Velocity" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Your library" }).click();
   await expect(page).toHaveURL("/library");
   await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Vanguard" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("article", { name: "Vanguard" })).toBeVisible();
-  await page.getByRole("button", { name: "Unsave Vanguard" }).click();
+  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await page.getByRole("button", { name: "Unsave Velocity" }).click();
   await expect(page.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
 });
 
-test("game details support keyboard dismissal and do not launch an upcoming game", async ({ page }) => {
+test("game details support keyboard dismissal", async ({ page }) => {
   await page.goto("/");
-  const trigger = page.getByRole("button", { name: "About Vanguard" });
+  const trigger = page.getByRole("button", { name: "About Velocity" });
   await trigger.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Vanguard" })).toBeVisible();
-  await expect(dialog.getByText("This game is not a browser game yet.")).toBeVisible();
-  await expect(dialog.getByRole("link", { name: /Play/ })).toHaveCount(0);
+  await expect(dialog.getByRole("heading", { name: "Velocity" })).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Play Velocity" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Close game details" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -132,12 +129,12 @@ test("game details support keyboard dismissal and do not launch an upcoming game
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(3);
+  await expect(page.getByRole("article")).toHaveCount(2);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
-  await page.getByRole("article", { name: "Vanguard" }).getByRole("button", { name: "Save Vanguard", exact: true }).click();
-  await expect(other.getByRole("article", { name: "Vanguard" })).toBeVisible();
+  await page.getByRole("article", { name: "Velocity" }).getByRole("button", { name: "Save Velocity", exact: true }).click();
+  await expect(other.getByRole("article", { name: "Velocity" })).toBeVisible();
   await other.close();
 });
 
@@ -147,9 +144,9 @@ test("library remains usable when browser storage is unavailable", async ({ page
     Storage.prototype.setItem = () => { throw new Error("Storage disabled"); };
   });
   await page.goto("/");
-  await page.getByRole("article", { name: "Vanguard" }).getByRole("button", { name: "Save Vanguard", exact: true }).click();
+  await page.getByRole("article", { name: "Velocity" }).getByRole("button", { name: "Save Velocity", exact: true }).click();
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Your library" }).click();
-  await expect(page.getByRole("article", { name: "Vanguard" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
 });
 
 test("phone and tablet layouts stay on screen, including the game toolbar", async ({ page }) => {

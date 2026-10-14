@@ -37,7 +37,10 @@ describe("browser library", () => {
 describe("game discovery", () => {
   test("combines search words, genre, and real availability", () => {
     expect(filterGames(games, { query: "  BLUE  touch ", genre: "Racing", status: "playable" }).map((game) => game.slug)).toEqual(["velocity"]);
-    expect(filterGames(games, { query: "bots", genre: "Action", status: "soon" }).map((game) => game.slug)).toEqual(["vanguard"]);
+    expect(filterGames(
+      [{ ...games[0]!, slug: "soon-game", title: "Bots", tagline: "bots", genre: "Action", status: "soon", origin: null, soonReason: "Later." }],
+      { query: "bots", genre: "Action", status: "soon" },
+    ).map((game) => game.slug)).toEqual(["soon-game"]);
     expect(filterGames(games, { query: "", genre: "Racing", status: "soon" })).toEqual([]);
     expect(filterGames(games, { query: "missing", genre: "all", status: "all" })).toEqual([]);
     expect(filterGames([{ ...games[0]!, origin: null }], { query: "", genre: "all", status: "playable" })).toEqual([]);

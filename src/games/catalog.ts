@@ -30,17 +30,6 @@ export const games: GameListing[] = [
     soonReason: null,
   },
   {
-    slug: "vanguard",
-    title: "Vanguard",
-    genre: "Action",
-    tagline: "A short team match against bots.",
-    status: "soon",
-    origin: null,
-    poster: "/posters/vanguard.jpg",
-    controls: "Keyboard, mouse, or touch",
-    soonReason: "This game is not a browser game yet.",
-  },
-  {
     slug: "flap-flap-fly",
     title: "Flap Flap Fly",
     genre: "Adventure",
