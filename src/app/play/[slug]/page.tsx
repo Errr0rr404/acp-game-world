@@ -8,15 +8,12 @@ import { frameSrc, games, playSrc } from "@/games/catalog";
 import { ancestorOrigin, readFramePermission } from "@/games/frame";
 import { loadGames } from "@/db";
 
-export function generateStaticParams() {
-  return games
-    .filter((game) => game.status === "playable")
-    .map((game) => ({ slug: game.slug }));
-}
-
 type PlayPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+// Framing permission is checked against the live game on each request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PlayPageProps): Promise<Metadata> {
   const { slug } = await params;
