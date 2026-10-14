@@ -1,109 +1,142 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
+import type { ResultSetHeader } from "mysql2";
 import { GAME_GENRES, games, isHttpsOrigin, type GameGenre, type GameListing } from "@/games/catalog";
 import { approvedOrigins } from "@/games/policy";
 import * as schema from "./schema";
 
-const globalForDb = globalThis as unknown as { pool?: Pool };
+const globalForDb = globalThis as unknown as { pool?: mysql.Pool };
 
-export function getPool(): Pool | null {
+export function getPool(): mysql.Pool | null {
   const url = process.env.DATABASE_URL;
   if (!url) return null;
-  if (!globalForDb.pool) globalForDb.pool = new Pool({
-    connectionString: url,
-    max: 5,
-    connectionTimeoutMillis: 4000,
-    query_timeout: 5000,
-    idleTimeoutMillis: 30_000,
-  });
+  if (!globalForDb.pool) {
+    const pool = mysql.createPool({
+      uri: url,
+      connectionLimit: 5,
+      connectTimeout: 4000,
+      idleTimeout: 30_000,
+      enableKeepAlive: true,
+      timezone: "Z",
+    });
+    pool.on("connection", (connection) => {
+      void connection.query("SET SESSION max_execution_time = 5000").catch(() => undefined);
+    });
+    globalForDb.pool = pool;
+  }
   return globalForDb.pool;
+}
+
+function affected(result: [ResultSetHeader, unknown] | ResultSetHeader): number {
+  const header = Array.isArray(result) ? result[0] : result;
+  return header?.affectedRows ?? 0;
 }
 
 export function getDb() {
   const pool = getPool();
   if (!pool) return null;
-  return drizzle(pool, { schema });
+  return drizzle(pool, { schema, mode: "default" });
 }
 
 let schemaReady: Promise<void> | null = null;
 
-export function ensureSchema(): Promise<void> {
-  const pool = getPool();
-  if (!pool) return Promise.resolve();
-  schemaReady ??= pool.query(`
-    CREATE TABLE IF NOT EXISTS "user" (
-      id text PRIMARY KEY,
-      name text NOT NULL,
-      email text NOT NULL UNIQUE,
+const SCHEMA_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS \`user\` (
+      id varchar(255) NOT NULL,
+      name varchar(255) NOT NULL,
+      email varchar(255) NOT NULL,
       email_verified boolean NOT NULL DEFAULT false,
       image text,
       over13 boolean NOT NULL DEFAULT false,
-      created_at timestamp NOT NULL DEFAULT now(),
-      updated_at timestamp NOT NULL DEFAULT now()
-    );
-    CREATE TABLE IF NOT EXISTS "session" (
-      id text PRIMARY KEY,
-      expires_at timestamp NOT NULL,
-      token text NOT NULL UNIQUE,
-      created_at timestamp NOT NULL DEFAULT now(),
-      updated_at timestamp NOT NULL DEFAULT now(),
-      ip_address text,
+      created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      UNIQUE KEY user_email_unique (email)
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`session\` (
+      id varchar(255) NOT NULL,
+      expires_at timestamp(3) NOT NULL,
+      token varchar(255) NOT NULL,
+      created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      ip_address varchar(255),
       user_agent text,
-      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS session_user_id_idx ON "session"(user_id);
-    CREATE TABLE IF NOT EXISTS "account" (
-      id text PRIMARY KEY,
-      account_id text NOT NULL,
-      provider_id text NOT NULL,
-      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      user_id varchar(255) NOT NULL,
+      PRIMARY KEY (id),
+      UNIQUE KEY session_token_unique (token),
+      KEY session_user_id_idx (user_id),
+      CONSTRAINT session_user_id_fk FOREIGN KEY (user_id) REFERENCES \`user\` (id) ON DELETE CASCADE
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`account\` (
+      id varchar(255) NOT NULL,
+      account_id varchar(255) NOT NULL,
+      provider_id varchar(255) NOT NULL,
+      user_id varchar(255) NOT NULL,
       access_token text,
       refresh_token text,
       id_token text,
-      access_token_expires_at timestamp,
-      refresh_token_expires_at timestamp,
+      access_token_expires_at timestamp(3) NULL,
+      refresh_token_expires_at timestamp(3) NULL,
       scope text,
       password text,
-      created_at timestamp NOT NULL DEFAULT now(),
-      updated_at timestamp NOT NULL DEFAULT now()
-    );
-    CREATE INDEX IF NOT EXISTS account_user_id_idx ON "account"(user_id);
-    CREATE TABLE IF NOT EXISTS "verification" (
-      id text PRIMARY KEY,
-      identifier text NOT NULL,
+      created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      KEY account_user_id_idx (user_id),
+      CONSTRAINT account_user_id_fk FOREIGN KEY (user_id) REFERENCES \`user\` (id) ON DELETE CASCADE
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`verification\` (
+      id varchar(255) NOT NULL,
+      identifier varchar(255) NOT NULL,
       value text NOT NULL,
-      expires_at timestamp NOT NULL,
-      created_at timestamp DEFAULT now(),
-      updated_at timestamp DEFAULT now()
-    );
-    CREATE TABLE IF NOT EXISTS "signin_gate" (
-      email text PRIMARY KEY,
-      expires_at timestamp NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS "play_session" (
-      id text PRIMARY KEY,
-      user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-      game_slug text NOT NULL,
-      started_at timestamp NOT NULL DEFAULT now(),
-      ended_at timestamp,
-      summary text
-    );
-    CREATE INDEX IF NOT EXISTS play_session_user_started_idx ON "play_session"(user_id, started_at);
-    CREATE TABLE IF NOT EXISTS "game_listing" (
-      slug text PRIMARY KEY,
-      title text NOT NULL,
+      expires_at timestamp(3) NOT NULL,
+      created_at timestamp(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updated_at timestamp(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id)
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`signin_gate\` (
+      email varchar(255) NOT NULL,
+      expires_at timestamp(3) NOT NULL,
+      PRIMARY KEY (email)
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`play_session\` (
+      id varchar(255) NOT NULL,
+      user_id varchar(255) NOT NULL,
+      game_slug varchar(128) NOT NULL,
+      started_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      ended_at timestamp(3) NULL,
+      summary text,
+      PRIMARY KEY (id),
+      KEY play_session_user_started_idx (user_id, started_at),
+      CONSTRAINT play_session_user_id_fk FOREIGN KEY (user_id) REFERENCES \`user\` (id) ON DELETE CASCADE
+    )`,
+  `CREATE TABLE IF NOT EXISTS \`game_listing\` (
+      slug varchar(128) NOT NULL,
+      title varchar(255) NOT NULL,
       tagline text NOT NULL,
-      status text NOT NULL,
-      origin text,
+      status varchar(32) NOT NULL,
+      origin varchar(255),
       poster text NOT NULL,
       controls text NOT NULL,
       soon_reason text,
-      sort integer NOT NULL DEFAULT 0,
-      genre text
+      sort int NOT NULL DEFAULT 0,
+      genre varchar(64),
+      PRIMARY KEY (slug)
+    )`,
+];
+
+export function ensureSchema(): Promise<void> {
+  const pool = getPool();
+  if (!pool) return Promise.resolve();
+  schemaReady ??= (async () => {
+    for (const statement of SCHEMA_STATEMENTS) await pool.query(statement);
+    const [columns] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 1 AS present FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_listing' AND COLUMN_NAME = 'genre' LIMIT 1`,
     );
-    ALTER TABLE "game_listing" ADD COLUMN IF NOT EXISTS genre text;
-  `).then(() => undefined).catch((error: unknown) => {
+    if (columns.length === 0) await pool.query("ALTER TABLE `game_listing` ADD COLUMN genre varchar(64) NULL");
+  })().catch((error: unknown) => {
     schemaReady = null;
     throw error;
   });
@@ -137,7 +170,7 @@ export async function loadGames(): Promise<GameListing[]> {
       soonReason: game.soonReason,
       sort,
       genre: game.genre,
-    }))).onConflictDoNothing();
+    }))).onDuplicateKeyUpdate({ set: { slug: sql`slug` } });
     const rows = await db.select().from(schema.gameListing).orderBy(schema.gameListing.sort);
     if (rows.length === 0) return games.map(publishable);
     return rows.map((row) =>
@@ -181,11 +214,16 @@ export async function updatePlaySession(
     .update(schema.playSession)
     .set({
       ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
-      ...(patch.end ? { endedAt: sql`coalesce(${schema.playSession.endedAt}, now())` } : {}),
+      ...(patch.end ? { endedAt: sql`coalesce(${schema.playSession.endedAt}, now(3))` } : {}),
     })
+    .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)));
+  if (affected(updated) > 0) return true;
+  const [row] = await db
+    .select({ id: schema.playSession.id })
+    .from(schema.playSession)
     .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)))
-    .returning({ id: schema.playSession.id });
-  return updated.length > 0;
+    .limit(1);
+  return Boolean(row);
 }
 
 export async function playsForUser(userId: string) {
@@ -208,15 +246,21 @@ export async function openSignInGate(email: string): Promise<void> {
   await db
     .insert(schema.signinGate)
     .values({ email, expiresAt })
-    .onConflictDoUpdate({ target: schema.signinGate.email, set: { expiresAt } });
+    .onDuplicateKeyUpdate({ set: { expiresAt } });
 }
 
 export async function consumeSignInGate(email: string): Promise<boolean> {
   const db = getDb();
   if (!db) return false;
   await ensureSchema();
-  const [row] = await db.delete(schema.signinGate).where(eq(schema.signinGate.email, email)).returning();
-  return Boolean(row && row.expiresAt.getTime() > Date.now());
+  const [existing] = await db
+    .select({ expiresAt: schema.signinGate.expiresAt })
+    .from(schema.signinGate)
+    .where(eq(schema.signinGate.email, email))
+    .limit(1);
+  const removed = await db.delete(schema.signinGate).where(eq(schema.signinGate.email, email));
+  if (affected(removed) < 1) return false;
+  return Boolean(existing && existing.expiresAt.getTime() > Date.now());
 }
 
 export async function saveListing(input: {
@@ -241,8 +285,7 @@ export async function saveListing(input: {
   await db
     .insert(schema.gameListing)
     .values({ ...input, sort: (highest?.sort ?? -1) + 1 })
-    .onConflictDoUpdate({
-      target: schema.gameListing.slug,
+    .onDuplicateKeyUpdate({
       set: {
         title: input.title,
         genre: input.genre ?? "Arcade",

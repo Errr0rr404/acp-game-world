@@ -50,7 +50,7 @@ function createAuth(db: NonNullable<ReturnType<typeof getDb>>, secret: string) {
       "http://localhost:3000",
       "https://game.agentcontrolpanel.dev",
     ],
-    database: drizzleAdapter(db, { provider: "pg", schema }),
+    database: drizzleAdapter(db, { provider: "mysql", schema }),
     user: {
       additionalFields: {
         over13: { type: "boolean", required: false, defaultValue: false, input: false },

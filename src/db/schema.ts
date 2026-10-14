@@ -1,93 +1,95 @@
-import { boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, int, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+const when = (name: string) => timestamp(name, { fsp: 3 }).notNull().defaultNow();
+
+export const user = mysqlTable("user", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   over13: boolean("over13").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: when("created_at"),
+  updatedAt: when("updated_at"),
 });
 
-export const session = pgTable(
+export const session = mysqlTable(
   "session",
   {
-    id: text("id").primaryKey(),
-    expiresAt: timestamp("expires_at").notNull(),
-    token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-    ipAddress: text("ip_address"),
+    id: varchar("id", { length: 255 }).primaryKey(),
+    expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull().unique(),
+    createdAt: when("created_at"),
+    updatedAt: when("updated_at"),
+    ipAddress: varchar("ip_address", { length: 255 }),
     userAgent: text("user_agent"),
-    userId: text("user_id")
+    userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
   (table) => [index("session_user_id_idx").on(table.userId)],
 );
 
-export const account = pgTable(
+export const account = mysqlTable(
   "account",
   {
-    id: text("id").primaryKey(),
-    accountId: text("account_id").notNull(),
-    providerId: text("provider_id").notNull(),
-    userId: text("user_id")
+    id: varchar("id", { length: 255 }).primaryKey(),
+    accountId: varchar("account_id", { length: 255 }).notNull(),
+    providerId: varchar("provider_id", { length: 255 }).notNull(),
+    userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at"),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { fsp: 3 }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { fsp: 3 }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: when("created_at"),
+    updatedAt: when("updated_at"),
   },
   (table) => [index("account_user_id_idx").on(table.userId)],
 );
 
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
+export const verification = mysqlTable("verification", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  identifier: varchar("identifier", { length: 255 }).notNull(),
   value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow(),
+  updatedAt: timestamp("updated_at", { fsp: 3 }).defaultNow(),
 });
 
-export const signinGate = pgTable("signin_gate", {
-  email: text("email").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
+export const signinGate = mysqlTable("signin_gate", {
+  email: varchar("email", { length: 255 }).primaryKey(),
+  expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
 });
 
-export const playSession = pgTable(
+export const playSession = mysqlTable(
   "play_session",
   {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
+    id: varchar("id", { length: 255 }).primaryKey(),
+    userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    gameSlug: text("game_slug").notNull(),
-    startedAt: timestamp("started_at").notNull().defaultNow(),
-    endedAt: timestamp("ended_at"),
+    gameSlug: varchar("game_slug", { length: 128 }).notNull(),
+    startedAt: when("started_at"),
+    endedAt: timestamp("ended_at", { fsp: 3 }),
     summary: text("summary"),
   },
   (table) => [index("play_session_user_started_idx").on(table.userId, table.startedAt)],
 );
 
-export const gameListing = pgTable("game_listing", {
-  slug: text("slug").primaryKey(),
-  title: text("title").notNull(),
-  genre: text("genre"),
+export const gameListing = mysqlTable("game_listing", {
+  slug: varchar("slug", { length: 128 }).primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  genre: varchar("genre", { length: 64 }),
   tagline: text("tagline").notNull(),
-  status: text("status").notNull(),
-  origin: text("origin"),
+  status: varchar("status", { length: 32 }).notNull(),
+  origin: varchar("origin", { length: 255 }),
   poster: text("poster").notNull(),
   controls: text("controls").notNull(),
   soonReason: text("soon_reason"),
-  sort: integer("sort").notNull().default(0),
+  sort: int("sort").notNull().default(0),
 });

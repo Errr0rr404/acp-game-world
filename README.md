@@ -30,6 +30,6 @@ The design direction and project review are in `docs/project-review.md`.
 
 Favorites are local to a browser and are not synced through accounts. Clearing browser storage removes the local library. If storage is unavailable, the library still works for the current visit. Account history is recorded when a game opens, rather than when its page is rendered or prefetched.
 
-The existing database initializes automatically. This version adds an optional `genre` column to `game_listing`; built-in games retain their genres when older rows have no value. Database calls have connection and query timeouts, and discovery falls back to the built-in catalog when the database is unavailable.
+Accounts use MySQL. `DATABASE_URL` is a `mysql://` URL. The public app uses the hub `shared-mysql` database `acp_game_world`. The schema is created on first use, including an optional `genre` column on `game_listing`. Built-in games keep their genres when older rows have no value. Database calls have connection and query timeouts, and discovery falls back to the built-in catalog when the database is unavailable.
 
 Browser tests use a fixture for the embedded game's content and mocked sign-in delivery. Framing permission still follows the game's response headers. Actual database-backed sign-in and email delivery need a configured environment.
