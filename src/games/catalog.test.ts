@@ -1,0 +1,64 @@
+import { describe, expect, test } from "vitest";
+import {
+  assertCatalog,
+  frameSrc,
+  games,
+  getGame,
+  isHttpsOrigin,
+  playSrc,
+  type GameListing,
+} from "./catalog";
+
+function listing(overrides: Partial<GameListing>): GameListing {
+  return {
+    slug: "sample",
+    title: "Sample",
+    tagline: "A game.",
+    status: "playable",
+    origin: "https://games.example",
+    poster: "/posters/sample.jpg",
+    controls: "Keyboard",
+    soonReason: null,
+    ...overrides,
+  };
+}
+
+describe("catalog", () => {
+  test("frames Velocity at its own origin and nowhere else", () => {
+    expect(playSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/");
+    expect(frameSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/?hub=1");
+    expect(frameSrc(getGame("vanguard")!)).toBeNull();
+    expect(playSrc(getGame("vanguard")!)).toBeNull();
+    expect(getGame("missing")).toBeUndefined();
+    expect(games.filter((game) => game.status === "playable")).toHaveLength(1);
+  });
+
+  test("accepts only a bare https origin", () => {
+    expect(isHttpsOrigin("https://racing.worldofz.info")).toBe(true);
+    expect(isHttpsOrigin("https://racing.worldofz.info/")).toBe(true);
+    expect(isHttpsOrigin("http://racing.worldofz.info")).toBe(false);
+    expect(isHttpsOrigin("https://racing.worldofz.info/play")).toBe(false);
+    expect(isHttpsOrigin("https://user:pass@racing.worldofz.info")).toBe(false);
+    expect(isHttpsOrigin("https://racing.worldofz.info:8443")).toBe(false);
+    expect(isHttpsOrigin("https://racing.worldofz.info/?next=1")).toBe(false);
+    expect(isHttpsOrigin("not a url")).toBe(false);
+  });
+
+  test("rejects a playable game that could frame an unapproved address", () => {
+    expect(() =>
+      assertCatalog([listing({ origin: "https://evil.example/game" })]),
+    ).toThrow(/https origin/);
+    expect(() => assertCatalog([listing({ origin: null })])).toThrow(/https origin/);
+    expect(() =>
+      assertCatalog([
+        listing({ slug: "soon-game", status: "soon", origin: "https://games.example", soonReason: "Later." }),
+      ]),
+    ).toThrow(/soon but has an origin/);
+    expect(() =>
+      assertCatalog([
+        listing({ slug: "one" }),
+        listing({ slug: "one", title: "Again" }),
+      ]),
+    ).toThrow(/duplicate slug/);
+  });
+});

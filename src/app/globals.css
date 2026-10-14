@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-atkinson), "Atkinson Hyperlegible", sans-serif;
+  --font-display: var(--font-fredoka), Fredoka, sans-serif;
+  --color-ink: #1d2430;
+  --color-sky: #d7f1ff;
+  --color-paper: #fffdf8;
+  --color-sun: #ffd23f;
+}
+
+body {
+  margin: 0;
+  background: var(--color-sky);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :focus-visible {
+    transition: none;
+  }
+}
