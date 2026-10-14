@@ -12,9 +12,6 @@ type PlayPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-// Framing permission is checked against the live game on each request.
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({ params }: PlayPageProps): Promise<Metadata> {
   const { slug } = await params;
   const game = games.find((item) => item.slug === slug);
