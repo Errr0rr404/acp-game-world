@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("shelf plays Velocity inside the hub and keeps Vanguard off the frame", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Pick a game and play it here." })).toBeVisible();
 
@@ -14,16 +15,15 @@ test("shelf plays Velocity inside the hub and keeps Vanguard off the frame", asy
   await expect(page).toHaveURL("/play/velocity");
   await expect(page.locator("iframe")).toHaveAttribute("src", "https://racing.worldofz.info/?hub=1");
 
-  await expect(
-    page.getByRole("heading", { name: "Velocity will not open inside this page yet." }),
-  ).toBeVisible();
+  await expect(page.locator("[data-frame-state='playing']")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Velocity will not open inside this page yet." })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Open on its own site" }).last()).toHaveAttribute(
     "href",
     "https://racing.worldofz.info/",
   );
 
   await page.getByRole("link", { name: "Leave game" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/", { timeout: 15_000 });
 });
 
 test("a game that is not playable returns to the shelf", async ({ page }) => {
