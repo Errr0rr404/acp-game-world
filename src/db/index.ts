@@ -21,7 +21,12 @@ export function getPool(): mysql.Pool | null {
       timezone: "Z",
     });
     pool.on("connection", (connection) => {
-      void connection.query("SET SESSION max_execution_time = 5000").catch(() => undefined);
+      // The pool event hands over the callback connection, not the promise API.
+      const query = connection.query as unknown as (
+        sql: string,
+        callback: (error: Error | null) => void,
+      ) => void;
+      query.call(connection, "SET SESSION max_execution_time = 5000", () => undefined);
     });
     globalForDb.pool = pool;
   }
