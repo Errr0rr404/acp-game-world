@@ -40,6 +40,17 @@ export const games: GameListing[] = [
     controls: "Keyboard, mouse, or touch",
     soonReason: "This game is not a browser game yet.",
   },
+  {
+    slug: "flap-flap-fly",
+    title: "Flap Flap Fly",
+    genre: "Adventure",
+    tagline: "You are the bird. Flap through a mountain valley, river and ocean, and grow from bird to dragon.",
+    status: "playable",
+    origin: "https://flap-flap-fly.liveapps.dev",
+    poster: "/posters/flap-flap-fly.jpg",
+    controls: "Keyboard, or flap with your camera",
+    soonReason: null,
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {

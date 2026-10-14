@@ -178,7 +178,7 @@ export function PlayFrame({ slug, title, controls, frameSrc, siteHref, permissio
       <main id="main-content" className="player-area" data-frame-state={verdict}>
         {permission !== "blocked" ? <iframe key={attempt} ref={frame} title={title} src={frameSrc}
           sandbox="allow-scripts allow-same-origin allow-pointer-lock"
-          allow="autoplay; fullscreen; gamepad; pointer-lock" allowFullScreen referrerPolicy="origin"
+          allow="autoplay; camera; fullscreen; gamepad; microphone; pointer-lock" allowFullScreen referrerPolicy="origin"
           aria-hidden={covered} tabIndex={covered ? -1 : 0}
           onLoad={(event) => onLoad(event.currentTarget)} onError={() => setVerdict("blocked")} /> : null}
         {verdict === "pending" ? (

@@ -29,8 +29,10 @@ describe("catalog", () => {
     expect(frameSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/?hub=1");
     expect(frameSrc(getGame("vanguard")!)).toBeNull();
     expect(playSrc(getGame("vanguard")!)).toBeNull();
+    expect(playSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/");
+    expect(frameSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();
-    expect(games.filter((game) => game.status === "playable")).toHaveLength(1);
+    expect(games.filter((game) => game.status === "playable")).toHaveLength(2);
   });
 
   test("accepts only a bare https origin", () => {
