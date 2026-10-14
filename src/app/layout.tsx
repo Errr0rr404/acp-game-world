@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Fredoka } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Atkinson_Hyperlegible, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { SITE_DESCRIPTION, SITE_URL } from "@/site";
 
-const fredoka = Fredoka({
+const display = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-fredoka",
+  variable: "--font-space",
 });
 
 const atkinson = Atkinson_Hyperlegible({
@@ -15,16 +15,22 @@ const atkinson = Atkinson_Hyperlegible({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Game World",
     template: "%s · Game World",
   },
-  description: "Pick a browser game and play it here. No account.",
+  description: SITE_DESCRIPTION,
+  applicationName: "Game World",
+  openGraph: { type: "website", siteName: "Game World", title: "Game World", description: SITE_DESCRIPTION, locale: "en_US" },
+  twitter: { card: "summary_large_image", title: "Game World", description: SITE_DESCRIPTION },
 };
+
+export const viewport: Viewport = { themeColor: "#101426", colorScheme: "dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${fredoka.variable} ${atkinson.variable}`}>
+    <html lang="en" className={`${display.variable} ${atkinson.variable}`}>
       <body>{children}</body>
     </html>
   );

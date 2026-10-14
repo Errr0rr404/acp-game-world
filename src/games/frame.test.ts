@@ -1,5 +1,7 @@
-import { expect, test } from "vitest";
-import { allowsFrame, ancestorOrigin, classifyFrameDocument } from "./frame";
+import { afterEach, expect, test, vi } from "vitest";
+import { allowsFrame, ancestorOrigin, classifyFrameDocument, frameAncestorSources, readFramePermission } from "./frame";
+
+afterEach(() => vi.unstubAllGlobals());
 
 test("a cross-origin document means the game accepted the frame", () => {
   expect(classifyFrameDocument("cross-origin", "")).toBe("playing");
@@ -14,13 +16,28 @@ test("any other same-origin document is a refusal", () => {
   expect(classifyFrameDocument("same-origin", "chrome-error://chromewebdata/")).toBe("blocked");
 });
 
-test("Velocity's current headers refuse every ancestor", () => {
+test("a deny policy refuses every ancestor", () => {
   const headers = {
     xFrameOptions: "DENY",
     contentSecurityPolicy: "default-src 'self'; frame-ancestors 'none'",
   };
   expect(allowsFrame(headers, "http://127.0.0.1:3000")).toBe(false);
   expect(allowsFrame(headers, "https://game.agentcontrolpanel.dev")).toBe(false);
+});
+
+test("only the actual frame-ancestors directive controls framing", () => {
+  expect(frameAncestorSources("frame-ancestors-report https://other.example; default-src 'self'")).toBeNull();
+  expect(frameAncestorSources("default-src 'self'; FRAME-ANCESTORS https://games.example")).toEqual(["https://games.example"]);
+});
+
+test("a failed game response is unavailable even without framing headers", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Service unavailable", { status: 503 })));
+  expect(await readFramePermission("https://racing.worldofz.info", "https://games.example")).toBe("unreachable");
+});
+
+test("a network failure does not pretend that a game refused framing", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+  expect(await readFramePermission("https://racing.worldofz.info", "https://games.example")).toBe("unreachable");
 });
 
 test("an allowlist names the hub and nobody else", () => {

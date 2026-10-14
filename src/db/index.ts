@@ -1,7 +1,7 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { games, isHttpsOrigin, type GameListing } from "@/games/catalog";
+import { GAME_GENRES, games, isHttpsOrigin, type GameGenre, type GameListing } from "@/games/catalog";
 import { approvedOrigins } from "@/games/policy";
 import * as schema from "./schema";
 
@@ -10,7 +10,13 @@ const globalForDb = globalThis as unknown as { pool?: Pool };
 export function getPool(): Pool | null {
   const url = process.env.DATABASE_URL;
   if (!url) return null;
-  if (!globalForDb.pool) globalForDb.pool = new Pool({ connectionString: url, max: 5 });
+  if (!globalForDb.pool) globalForDb.pool = new Pool({
+    connectionString: url,
+    max: 5,
+    connectionTimeoutMillis: 4000,
+    query_timeout: 5000,
+    idleTimeoutMillis: 30_000,
+  });
   return globalForDb.pool;
 }
 
@@ -93,9 +99,14 @@ export function ensureSchema(): Promise<void> {
       poster text NOT NULL,
       controls text NOT NULL,
       soon_reason text,
-      sort integer NOT NULL DEFAULT 0
+      sort integer NOT NULL DEFAULT 0,
+      genre text
     );
-  `).then(() => undefined);
+    ALTER TABLE "game_listing" ADD COLUMN IF NOT EXISTS genre text;
+  `).then(() => undefined).catch((error: unknown) => {
+    schemaReady = null;
+    throw error;
+  });
   return schemaReady;
 }
 
@@ -115,25 +126,25 @@ export async function loadGames(): Promise<GameListing[]> {
   if (!db) return games.map(publishable);
   try {
     await ensureSchema();
-    for (const [sort, game] of games.entries()) {
-      await db.insert(schema.gameListing).values({
-        slug: game.slug,
-        title: game.title,
-        tagline: game.tagline,
-        status: game.status,
-        origin: game.origin,
-        poster: game.poster,
-        controls: game.controls,
-        soonReason: game.soonReason,
-        sort,
-      }).onConflictDoNothing();
-    }
+    await db.insert(schema.gameListing).values(games.map((game, sort) => ({
+      slug: game.slug,
+      title: game.title,
+      tagline: game.tagline,
+      status: game.status,
+      origin: game.origin,
+      poster: game.poster,
+      controls: game.controls,
+      soonReason: game.soonReason,
+      sort,
+      genre: game.genre,
+    }))).onConflictDoNothing();
     const rows = await db.select().from(schema.gameListing).orderBy(schema.gameListing.sort);
     if (rows.length === 0) return games.map(publishable);
     return rows.map((row) =>
       publishable({
         slug: row.slug,
         title: row.title,
+        genre: GAME_GENRES.includes(row.genre as GameGenre) ? row.genre as GameGenre : undefined,
         tagline: row.tagline,
         status: row.status === "playable" ? "playable" : "soon",
         origin: row.origin,
@@ -165,16 +176,16 @@ export async function updatePlaySession(
   const db = getDb();
   if (!db) return false;
   await ensureSchema();
-  const [row] = await db.select().from(schema.playSession).where(eq(schema.playSession.id, id)).limit(1);
-  if (!row || row.userId !== userId) return false;
-  await db
+  if (patch.summary === undefined && !patch.end) return false;
+  const updated = await db
     .update(schema.playSession)
     .set({
-      summary: patch.summary ?? row.summary,
-      endedAt: patch.end && !row.endedAt ? new Date() : row.endedAt,
+      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.end ? { endedAt: sql`coalesce(${schema.playSession.endedAt}, now())` } : {}),
     })
-    .where(eq(schema.playSession.id, id));
-  return true;
+    .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)))
+    .returning({ id: schema.playSession.id });
+  return updated.length > 0;
 }
 
 export async function playsForUser(userId: string) {
@@ -185,7 +196,8 @@ export async function playsForUser(userId: string) {
     .select()
     .from(schema.playSession)
     .where(eq(schema.playSession.userId, userId))
-    .orderBy(desc(schema.playSession.startedAt));
+    .orderBy(desc(schema.playSession.startedAt))
+    .limit(200);
 }
 
 export async function openSignInGate(email: string): Promise<void> {
@@ -203,14 +215,14 @@ export async function consumeSignInGate(email: string): Promise<boolean> {
   const db = getDb();
   if (!db) return false;
   await ensureSchema();
-  const [row] = await db.select().from(schema.signinGate).where(eq(schema.signinGate.email, email)).limit(1);
-  await db.delete(schema.signinGate).where(eq(schema.signinGate.email, email));
+  const [row] = await db.delete(schema.signinGate).where(eq(schema.signinGate.email, email)).returning();
   return Boolean(row && row.expiresAt.getTime() > Date.now());
 }
 
 export async function saveListing(input: {
   slug: string;
   title: string;
+  genre?: GameGenre;
   tagline: string;
   status: "playable" | "soon";
   origin: string | null;
@@ -233,6 +245,7 @@ export async function saveListing(input: {
       target: schema.gameListing.slug,
       set: {
         title: input.title,
+        genre: input.genre ?? "Arcade",
         tagline: input.tagline,
         status: input.status,
         origin: input.origin,

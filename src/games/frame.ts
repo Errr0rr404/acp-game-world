@@ -1,5 +1,5 @@
 export type FrameAccess = "cross-origin" | "same-origin";
-export type FrameVerdict = "playing" | "blocked" | "pending";
+export type FrameVerdict = "playing" | "blocked" | "pending" | "slow";
 
 /**
  * A game that accepted the frame is cross-origin, so the parent cannot read it.
@@ -23,7 +23,7 @@ export function frameAncestorSources(csp: string | null): string[] | null {
   const directive = csp
     .split(";")
     .map((part) => part.trim())
-    .find((part) => part.toLowerCase().startsWith("frame-ancestors"));
+    .find((part) => part.split(/\s+/)[0]?.toLowerCase() === "frame-ancestors");
   if (!directive) return null;
   return directive.split(/\s+/).slice(1).map((source) => source.toLowerCase());
 }
@@ -66,6 +66,7 @@ export async function readFramePermission(src: string, ancestor: string): Promis
       signal: AbortSignal.timeout(8000),
     });
     await response.body?.cancel();
+    if (!response.ok) return "unreachable";
     return allowsFrame(
       {
         xFrameOptions: response.headers.get("x-frame-options"),

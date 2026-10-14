@@ -1,64 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { signInError } from "@/games/policy";
+import { Icon } from "./Icon";
 
 export function SignInForm() {
-  const [message, setMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [over13, setOver13] = useState(false);
+  const [error, setError] = useState<{ field: "email" | "age" | "request"; message: string } | null>(null);
+  const [sent, setSent] = useState(false);
   const [devLink, setDevLink] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const ageInput = useRef<HTMLInputElement>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    if (pending) return;
+    const problem = signInError({ email, over13 });
+    if (problem) {
+      const field = problem === "Confirm you are 13 or older." ? "age" : "email";
+      setError({ field, message: problem });
+      if (field === "email") emailInput.current?.focus();
+      else ageInput.current?.focus();
+      return;
+    }
     setPending(true);
+    setError(null);
     setDevLink(null);
     try {
       const response = await fetch("/api/sign-in", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          email: String(form.get("email") ?? ""),
-          over13: form.get("over13") === "yes",
-        }),
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), over13 }),
+        signal: AbortSignal.timeout(15_000),
       });
-      const body = (await response.json()) as { message?: string; devLink?: string | null };
-      setMessage(body.message ?? "The sign-in link could not be sent.");
-      setDevLink(body.devLink ?? null);
+      const body = await response.json() as { ok?: boolean; message?: string; devLink?: string | null };
+      if (!response.ok || !body.ok) {
+        setError({ field: "request", message: body.message ?? "The sign-in link could not be sent. Try again." });
+      } else {
+        setDevLink(body.devLink ?? null);
+        setSent(true);
+      }
     } catch {
-      setMessage("The sign-in link could not be sent.");
-    } finally {
-      setPending(false);
-    }
+      setError({ field: "request", message: "The sign-in link could not be sent. Check your connection and try again." });
+    } finally { setPending(false); }
   }
 
-  return (
-    <form onSubmit={onSubmit} className="mt-6 flex max-w-md flex-col gap-4">
-      <label className="flex flex-col gap-2 text-lg">
-        Email
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          className="min-h-12 rounded-xl border-2 border-ink bg-paper px-3"
-        />
-      </label>
-      <label className="flex items-start gap-3 text-lg">
-        <input name="over13" type="checkbox" value="yes" className="mt-1 h-5 w-5" />
-        I am 13 or older.
-      </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex min-h-12 items-center justify-center rounded-full border-2 border-ink bg-sun px-5 font-display text-lg font-semibold shadow-[3px_3px_0_#1d2430] disabled:opacity-60"
-      >
-        Send a sign-in link
-      </button>
-      {message ? <p role="status">{message}</p> : null}
-      {devLink ? (
-        <a href={devLink} className="break-all underline">
-          Open the sign-in link
-        </a>
-      ) : null}
-    </form>
-  );
+  if (sent) return <div className="auth-success" role="status">
+    <span className="auth-success-icon"><Icon name="mail" width="28" height="28" /></span>
+    <h3>{devLink ? "Your link is ready." : "Check your inbox."}</h3>
+    <p>{devLink ? <>Email isn’t sent in this preview. Use the link below to sign in as <strong>{email.trim()}</strong>.</> : <>We sent a sign-in link to <strong>{email.trim()}</strong>. It expires in 15 minutes. Check your spam folder if you don’t see it.</>}</p>
+    {devLink ? <p className="notice"><a href={devLink}>Open the development sign-in link</a></p> : null}
+    <button type="button" className="button button-secondary" onClick={() => { setSent(false); setDevLink(null); setEmail(""); setError(null); }}>Use another email</button>
+  </div>;
+
+  return <form onSubmit={onSubmit} className="auth-form" aria-label="Email sign-in" noValidate aria-busy={pending}>
+    <div className="form-field"><label htmlFor="email">Email</label>
+    <input ref={emailInput} id="email" name="email" type="email" autoComplete="email" inputMode="email" maxLength={254}
+      placeholder="you@example.com" className="form-input" value={email} onChange={(event) => { setEmail(event.target.value); if (error?.field === "email") setError(null); }}
+      aria-invalid={error?.field === "email"} aria-describedby={error?.field === "email" ? "email-error" : undefined} /></div>
+    {error?.field === "email" ? <p id="email-error" role="alert" className="field-error">{error.message}</p> : null}
+    <label className="check-field">
+      <input ref={ageInput} name="over13" type="checkbox" checked={over13} value="yes" onChange={(event) => { setOver13(event.target.checked); if (error?.field === "age") setError(null); }}
+        aria-invalid={error?.field === "age"} aria-describedby={error?.field === "age" ? "age-error" : undefined} />
+      I am 13 or older.
+    </label>
+    {error?.field === "age" ? <p id="age-error" role="alert" className="field-error">{error.message}</p> : null}
+    <button type="submit" disabled={pending} className="button button-primary">{pending ? <><span className="loading-spinner" />Sending your link…</> : <><Icon name="mail" />Send a sign-in link</>}</button>
+    {error?.field === "request" ? <p role="alert" className="notice notice-error">{error.message}</p> : null}
+  </form>;
 }

@@ -82,6 +82,7 @@ export const playSession = pgTable(
 export const gameListing = pgTable("game_listing", {
   slug: text("slug").primaryKey(),
   title: text("title").notNull(),
+  genre: text("genre"),
   tagline: text("tagline").notNull(),
   status: text("status").notNull(),
   origin: text("origin"),

@@ -1,51 +1,40 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { GameListing } from "@/games/catalog";
-import { playSrc } from "@/games/catalog";
+import { genreForGame, playSrc } from "@/games/catalog";
+import { Icon } from "./Icon";
+import { SaveGameButton } from "./SaveGameButton";
 
-export function GameCard({ game, priority = false }: { game: GameListing; priority?: boolean }) {
-  const src = playSrc(game);
-
+export function GameCard({ game, onDetails }: { game: GameListing; onDetails: (game: GameListing, trigger: HTMLButtonElement) => void }) {
+  const playable = Boolean(playSrc(game));
   return (
     <li>
-      <article
-        aria-labelledby={`game-${game.slug}`}
-        className="flex h-full flex-col overflow-hidden rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_#1d2430]"
-      >
-        <Image
-          src={game.poster}
-          alt=""
-          width={1280}
-          height={720}
-          priority={priority}
-          sizes="(min-width: 640px) 480px, 100vw"
-          className="aspect-video w-full bg-ink object-cover"
-        />
-        <div className="flex flex-1 flex-col gap-3 p-5">
-          <h2 id={`game-${game.slug}`} className="font-display text-3xl font-semibold leading-none">
-            {game.title}
-          </h2>
-          <p className="text-lg leading-snug">{game.tagline}</p>
-          <p className="text-base">
-            {game.status === "soon" ? game.soonReason : game.controls}
-          </p>
-          <div className="mt-auto pt-2">
-            {src ? (
-              <Link
-                href={`/play/${game.slug}`}
-                className="inline-flex min-h-12 items-center justify-center rounded-full border-2 border-ink bg-sun px-5 font-display text-lg font-semibold shadow-[3px_3px_0_#1d2430] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-              >
-                Play
-              </Link>
+      <article aria-labelledby={`game-${game.slug}`} className="game-card">
+        <div className="game-card-art">
+          <Image src={game.poster} alt="" width={1280} height={720} sizes="(min-width: 1280px) 592px, (min-width: 700px) 45vw, 100vw" />
+          <span className={`availability ${playable ? "is-ready" : "is-soon"}`}>
+            <span className="status-dot" />{playable ? "Ready to play" : "Coming soon"}
+          </span>
+          <SaveGameButton game={game} compact />
+        </div>
+        <div className="game-card-body">
+          <div className="game-card-heading">
+            <h3 id={`game-${game.slug}`}>{game.title}</h3>
+            <span className="genre-label">{genreForGame(game)}</span>
+          </div>
+          <p className="game-description">{game.tagline}</p>
+          <p className="game-controls"><Icon name="keyboard" />{game.controls}</p>
+          <div className="game-card-actions">
+            {playable ? (
+              <Link href={`/play/${game.slug}`} className="button button-primary"><Icon name="play" />Play {game.title}</Link>
             ) : (
-              <button
-                type="button"
-                disabled
-                className="inline-flex min-h-12 cursor-not-allowed items-center justify-center rounded-full border-2 border-ink bg-paper px-5 font-display text-lg font-semibold"
-              >
-                Not on the web yet
-              </button>
+              <span className="coming-label"><Icon name="clock" />In the works</span>
             )}
+            <button type="button" className="button button-quiet" onClick={(event) => onDetails(game, event.currentTarget)} aria-label={`About ${game.title}`}>
+              Game details<Icon name="arrow" />
+            </button>
           </div>
         </div>
       </article>

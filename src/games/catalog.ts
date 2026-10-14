@@ -1,8 +1,11 @@
 export type GameStatus = "playable" | "soon";
+export const GAME_GENRES = ["Racing", "Action", "Arcade", "Puzzle", "Adventure", "Sports"] as const;
+export type GameGenre = (typeof GAME_GENRES)[number];
 
 export type GameListing = {
   slug: string;
   title: string;
+  genre?: GameGenre;
   tagline: string;
   status: GameStatus;
   /** Bare https origin. Null until the game can be framed. */
@@ -18,6 +21,7 @@ export const games: GameListing[] = [
   {
     slug: "velocity",
     title: "Velocity",
+    genre: "Racing",
     tagline: "Street race at blue hour. Outrun the cops and keep the car.",
     status: "playable",
     origin: "https://racing.worldofz.info",
@@ -28,6 +32,7 @@ export const games: GameListing[] = [
   {
     slug: "vanguard",
     title: "Vanguard",
+    genre: "Action",
     tagline: "A short team match against bots.",
     status: "soon",
     origin: null,
@@ -39,6 +44,10 @@ export const games: GameListing[] = [
 
 export function getGame(slug: string): GameListing | undefined {
   return games.find((game) => game.slug === slug);
+}
+
+export function genreForGame(game: GameListing): GameGenre {
+  return game.genre ?? getGame(game.slug)?.genre ?? "Arcade";
 }
 
 /** True only for a bare https origin, with no path, query, port, or login. */

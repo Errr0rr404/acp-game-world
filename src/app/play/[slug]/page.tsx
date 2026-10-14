@@ -6,7 +6,7 @@ import { getSession } from "@/auth";
 import { PlayFrame } from "@/components/PlayFrame";
 import { frameSrc, games, playSrc } from "@/games/catalog";
 import { ancestorOrigin, readFramePermission } from "@/games/frame";
-import { loadGames, startPlaySession } from "@/db";
+import { loadGames } from "@/db";
 
 export function generateStaticParams() {
   return games
@@ -21,16 +21,18 @@ type PlayPageProps = {
 export async function generateMetadata({ params }: PlayPageProps): Promise<Metadata> {
   const { slug } = await params;
   const game = games.find((item) => item.slug === slug);
-  return { title: game?.title ?? "Game" };
+  return {
+    title: game?.title ?? "Game",
+    description: game?.tagline,
+    alternates: { canonical: `/play/${slug}` },
+    openGraph: { title: game ? `${game.title} · Game World` : "Game World", description: game?.tagline, url: `/play/${slug}`, siteName: "Game World", type: "website" },
+    twitter: { card: "summary_large_image", title: game ? `${game.title} · Game World` : "Game World", description: game?.tagline },
+  };
 }
 
 function Opening() {
   return (
-    <div className="flex h-dvh items-center justify-center bg-ink text-paper">
-      <p role="status" className="font-display text-2xl">
-        Opening the game…
-      </p>
-    </div>
+    <div className="play-opening"><div className="player-loading" role="status"><span className="loading-spinner" /><p>Opening the game…</p></div></div>
   );
 }
 
@@ -40,23 +42,18 @@ async function PlayRoute({ params }: Pick<PlayPageProps, "params">) {
   const src = game ? playSrc(game) : null;
   const framed = game ? frameSrc(game) : null;
   if (!game || !src || !framed) redirect("/");
-  const permission = await readFramePermission(src, ancestorOrigin(await headers()));
-  const session = await getSession();
-  let sessionId: string | null = null;
-  if (session) {
-    try {
-      sessionId = await startPlaySession(session.user.id, game.slug);
-    } catch (error) {
-      console.error("play session was not recorded", error);
-    }
-  }
+  const ancestor = ancestorOrigin(await headers());
+  const [permission, session] = await Promise.all([readFramePermission(src, ancestor), getSession()]);
   return (
     <PlayFrame
+      key={`${game.slug}:${permission}`}
+      slug={game.slug}
       title={game.title}
+      controls={game.controls}
       frameSrc={framed}
       siteHref={src}
       permission={permission}
-      sessionId={sessionId}
+      recordHistory={Boolean(session)}
       playerName={session?.user.name ?? null}
     />
   );

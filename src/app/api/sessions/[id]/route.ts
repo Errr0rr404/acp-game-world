@@ -1,8 +1,10 @@
 import { getSession } from "@/auth";
 import { updatePlaySession } from "@/db";
 import { parseGameMessage } from "@/games/bridge";
+import { sameOrigin } from "@/security/request";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!sameOrigin(request)) return Response.json({ ok: false }, { status: 403 });
   const session = await getSession();
   if (!session) return Response.json({ ok: false }, { status: 401 });
   const { id } = await context.params;
@@ -21,6 +23,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     patch.summary = parsed.summary;
   }
   if (!patch.end && !patch.summary) return Response.json({ ok: false }, { status: 400 });
-  const saved = await updatePlaySession(id, session.user.id, patch);
-  return Response.json({ ok: saved }, { status: saved ? 200 : 404 });
+  try {
+    const saved = await updatePlaySession(id, session.user.id, patch);
+    return Response.json({ ok: saved }, { status: saved ? 200 : 404 });
+  } catch (error) {
+    console.error("play session update failed", error);
+    return Response.json({ ok: false, message: "Your play history could not be updated." }, { status: 503 });
+  }
 }

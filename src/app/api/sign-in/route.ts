@@ -1,17 +1,7 @@
 import { getAuth, takeDevLink } from "@/auth";
 import { ensureSchema, openSignInGate } from "@/db";
 import { accountsEnabled, signInError } from "@/games/policy";
-
-function sameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
+import { sameOrigin } from "@/security/request";
 
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ ok: false, message: "That request came from the wrong site." }, { status: 403 });

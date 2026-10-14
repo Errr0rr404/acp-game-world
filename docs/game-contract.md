@@ -36,8 +36,10 @@ The game may answer:
 { type: "game.exit", v: 1 }
 ```
 
-Check `event.origin` before trusting `hub.hello`. The hub checks the game's origin before storing a result. A game that never speaks these messages still plays. The shelf then only remembers that a signed-in player opened it.
+Check `event.origin` before trusting `hub.hello`. The hub checks both the game's origin and the sending frame before trusting a message or storing a result. A game that never speaks these messages still plays. The library then only remembers that a player opened it.
+
+Play history starts after the frame opens or sends `game.ready`. Opening or prefetching the hub's play route alone does not record a session. The parent ends the session when the player leaves, including client-side navigation.
 
 ## What this repo changes
 
-One catalog row, one poster in `public/posters`, and one browser test that the new card opens its own origin. Vanguard is not eligible until it has a deployed browser build.
+One catalog row (including its genre), one poster in `public/posters`, and one browser test that the new card opens its own origin. Vanguard is not eligible until it has a deployed browser build.

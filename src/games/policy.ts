@@ -17,7 +17,7 @@ export function isOperator(email: string | null | undefined): boolean {
 export function signInError(input: { email: string; over13: boolean }): string | null {
   const email = input.email.trim();
   if (!email) return "Enter an email.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "That email does not look right.";
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "That email does not look right.";
   if (!input.over13) return "Confirm you are 13 or older.";
   return null;
 }

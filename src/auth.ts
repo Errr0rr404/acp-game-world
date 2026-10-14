@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
-import { consumeSignInGate, getDb } from "@/db";
+import { consumeSignInGate, ensureSchema, getDb } from "@/db";
 import * as schema from "@/db/schema";
 import { accountsEnabled } from "@/games/policy";
 
@@ -99,5 +99,11 @@ export async function getSession() {
   const auth = getAuth();
   if (!auth) return null;
   const { headers } = await import("next/headers");
-  return auth.api.getSession({ headers: await headers() });
+  try {
+    await ensureSchema();
+    return await auth.api.getSession({ headers: await headers() });
+  } catch (error) {
+    console.error("account session is unavailable", error);
+    return null;
+  }
 }
