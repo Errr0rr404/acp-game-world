@@ -1,4 +1,13 @@
-const DEFAULT_APPROVED = ["https://racing.worldofz.info", "https://flap-flap-fly.liveapps.dev", "https://scrapyard-fps.liveapps.dev"];
+const DEFAULT_APPROVED = [
+  "https://racing.worldofz.info",
+  "https://flap-flap-fly.liveapps.dev",
+  "https://scrapyard-fps.liveapps.dev",
+  "https://sundial-dash.liveapps.dev",
+  "https://voxel-rivals.liveapps.dev",
+  "https://tetherfly.liveapps.dev",
+  "https://stunt-ridge.liveapps.dev",
+  "https://wicks-end.liveapps.dev",
+];
 
 export function approvedOrigins(): string[] {
   const configured = process.env.APPROVED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean);

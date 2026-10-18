@@ -32,8 +32,13 @@ describe("catalog", () => {
     expect(frameSrc(getGame("flap-flap-fly")!)).toBe("https://flap-flap-fly.liveapps.dev/?hub=1");
     expect(playSrc(getGame("scrapyard-fps")!)).toBe("https://scrapyard-fps.liveapps.dev/");
     expect(frameSrc(getGame("scrapyard-fps")!)).toBe("https://scrapyard-fps.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("sundial-dash")!)).toBe("https://sundial-dash.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("voxel-rivals")!)).toBe("https://voxel-rivals.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("tetherfly")!)).toBe("https://tetherfly.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("stunt-ridge")!)).toBe("https://stunt-ridge.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("wicks-end")!)).toBe("https://wicks-end.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();
-    expect(games.filter((game) => game.status === "playable")).toHaveLength(3);
+    expect(games.filter((game) => game.status === "playable")).toHaveLength(8);
   });
 
   test("accepts only a bare https origin", () => {
