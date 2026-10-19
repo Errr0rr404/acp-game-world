@@ -293,6 +293,17 @@ export const games: GameListing[] = [
     controls: "WASD or arrows, or drag. Weapons fire on their own.",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "sinkhole",
+    title: "Sinkhole",
+    genre: "Arcade",
+    tagline: "Slide a hole through a low-poly city, swallow what fits, and outgrow seven rival holes.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/sinkhole.jpg",
+    controls: "WASD, arrows, or drag",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
