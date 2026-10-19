@@ -118,8 +118,20 @@ for (const game of [
 test("a game that is not playable returns to discovery", async ({ page }) => {
   await page.goto("/play/vanguard");
   await expect(page).toHaveURL("/");
+  await page.goto("/play/wordwell");
+  await expect(page).toHaveURL("/");
   await page.goto("/play/not-a-game");
   await expect(page).toHaveURL("/");
+});
+
+test("wordwell is on the shelf and not playable yet", async ({ page }) => {
+  await page.goto("/");
+  const card = page.getByRole("article", { name: "Wordwell" });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("Coming soon")).toBeVisible();
+  await expect(card.getByRole("link", { name: "Play Wordwell" })).toHaveCount(0);
+  await card.getByRole("button", { name: "About Wordwell" }).click();
+  await expect(page.getByRole("dialog").getByText("The browser version is packaged and waiting to go live.")).toBeVisible();
 });
 
 test("search, genre, availability and clear filters work together", async ({ page }) => {
@@ -130,9 +142,9 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await page.getByLabel("Genre", { exact: true }).selectOption("Action");
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(8);
-  await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(9);
+  await page.getByRole("button", { name: "Coming soon 1", exact: true }).click();
+  await expect(page.getByRole("article", { name: "Wordwell" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Velocity" })).toHaveCount(0);
 });
 
@@ -173,7 +185,7 @@ test("game details support keyboard dismissal", async ({ page }) => {
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(8);
+  await expect(page.getByRole("article")).toHaveCount(9);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();

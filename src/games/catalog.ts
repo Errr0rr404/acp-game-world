@@ -106,6 +106,17 @@ export const games: GameListing[] = [
     controls: "Keyboard, touch or a controller",
     soonReason: null,
   },
+  {
+    slug: "wordwell",
+    title: "Wordwell",
+    genre: "Puzzle",
+    tagline: "Five letters, six tries, one word a day. Flip warm tiles, keep your streak and share your grid.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/wordwell.jpg",
+    controls: "Keyboard, mouse or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
