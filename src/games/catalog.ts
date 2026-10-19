@@ -282,6 +282,17 @@ export const games: GameListing[] = [
     controls: "Mouse, touch, or keyboard",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "lantern-horde",
+    title: "Lantern Horde",
+    genre: "Action",
+    tagline: "Hold back a swelling night-horde in a lantern-lit forest until dawn.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/lantern-horde.jpg",
+    controls: "WASD or arrows, or drag. Weapons fire on their own.",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
