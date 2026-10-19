@@ -315,6 +315,17 @@ export const games: GameListing[] = [
     controls: "Arrows, Z/X, Space, C/Shift, or touch",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "ember-and-tide",
+    title: "Ember & Tide",
+    genre: "Puzzle",
+    tagline: "Guide Ember and Tide through a sunken temple. Lava, water, poison, and both doors.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/ember-and-tide.jpg",
+    controls: "Arrows and WASD, or touch pads",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
