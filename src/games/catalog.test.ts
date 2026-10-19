@@ -37,6 +37,7 @@ describe("catalog", () => {
     expect(frameSrc(getGame("tetherfly")!)).toBe("https://tetherfly.liveapps.dev/?hub=1");
     expect(frameSrc(getGame("stunt-ridge")!)).toBe("https://stunt-ridge.liveapps.dev/?hub=1");
     expect(frameSrc(getGame("wicks-end")!)).toBe("https://wicks-end.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("wordwell")!)).toBe("https://wordwell.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();
     expect(games.filter((game) => game.status === "playable")).toHaveLength(8);
   });

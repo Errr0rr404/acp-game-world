@@ -95,6 +95,7 @@ for (const game of [
   { slug: "tetherfly", title: "Tetherfly" },
   { slug: "stunt-ridge", title: "Stunt Ridge" },
   { slug: "wicks-end", title: "Wick's End" },
+  { slug: "wordwell", title: "Wordwell" },
 ]) {
   test(`${game.title} opens on its own origin`, async ({ page }) => {
     test.setTimeout(60_000);
@@ -117,8 +118,6 @@ for (const game of [
 
 test("a game that is not playable returns to discovery", async ({ page }) => {
   await page.goto("/play/vanguard");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/wordwell");
   await expect(page).toHaveURL("/");
   await page.goto("/play/sweet-snip");
   await expect(page).toHaveURL("/");
@@ -158,7 +157,7 @@ test("a game that is not playable returns to discovery", async ({ page }) => {
   await expect(page).toHaveURL("/");
 });
 
-for (const title of ["Wordwell", "Sweet Snip", "Lab Escape", "Monster Haul", "Balloon Bastion", "Inkland", "Corner Pocket", "Patience Parlor", "Glowtail", "Twofold", "Beatline", "Rim Rivals", "Bubble Reef", "Hop Lanes", "Orchard Drop", "Crumb Tycoon", "Lantern Horde", "Sinkhole"]) {
+for (const title of ["Sweet Snip", "Lab Escape", "Monster Haul", "Balloon Bastion", "Inkland", "Corner Pocket", "Patience Parlor", "Glowtail", "Twofold", "Beatline", "Rim Rivals", "Bubble Reef", "Hop Lanes", "Orchard Drop", "Crumb Tycoon", "Lantern Horde", "Sinkhole"]) {
   test(`${title} is on the shelf and not playable yet`, async ({ page }) => {
     await page.goto("/");
     const card = page.getByRole("article", { name: title });
@@ -179,8 +178,7 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByRole("article")).toHaveCount(26);
-  await page.getByRole("button", { name: "Coming soon 18", exact: true }).click();
-  await expect(page.getByRole("article", { name: "Wordwell" })).toBeVisible();
+  await page.getByRole("button", { name: "Coming soon 17", exact: true }).click();
   await expect(page.getByRole("article", { name: "Sweet Snip" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Lab Escape" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Monster Haul" })).toBeVisible();

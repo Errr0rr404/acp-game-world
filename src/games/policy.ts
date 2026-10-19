@@ -7,6 +7,7 @@ const DEFAULT_APPROVED = [
   "https://tetherfly.liveapps.dev",
   "https://stunt-ridge.liveapps.dev",
   "https://wicks-end.liveapps.dev",
+  "https://wordwell.liveapps.dev",
 ];
 
 export function approvedOrigins(): string[] {
