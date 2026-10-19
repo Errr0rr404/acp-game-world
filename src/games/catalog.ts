@@ -249,6 +249,17 @@ export const games: GameListing[] = [
     controls: "Mouse, touch, or keyboard",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "hop-lanes",
+    title: "Hop Lanes",
+    genre: "Arcade",
+    tagline: "Hop endless roads, rivers, and rails as a voxel critter before the hawk swoops in.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/hop-lanes.jpg",
+    controls: "Keyboard or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
