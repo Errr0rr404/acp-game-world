@@ -28,6 +28,8 @@ How a new game joins is written in `docs/game-contract.md`.
 
 The design direction and project review are in `docs/project-review.md`.
 
+The scaling review and the plan for growing into a publishing platform are in `docs/platform-design.md`.
+
 Favorites are local to a browser and are not synced through accounts. Clearing browser storage removes the local library. If storage is unavailable, the library still works for the current visit. Account history is recorded when a game opens, rather than when its page is rendered or prefetched.
 
 Accounts use MySQL. `DATABASE_URL` is a `mysql://` URL. The public app uses the hub `shared-mysql` database `acp_game_world`. The schema is created on first use, including an optional `genre` column on `game_listing`. Built-in games keep their genres when older rows have no value. Database calls have connection and query timeouts, and discovery falls back to the built-in catalog when the database is unavailable.
