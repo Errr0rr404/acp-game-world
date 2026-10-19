@@ -139,6 +139,17 @@ export const games: GameListing[] = [
     controls: "Hold Space, click, or touch",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "monster-haul",
+    title: "Monster Haul",
+    genre: "Racing",
+    tagline: "Gas and brake only. Get the monster truck to the flag across thirty original stages.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/monster-haul.jpg",
+    controls: "Keyboard or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
