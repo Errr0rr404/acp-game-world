@@ -260,6 +260,17 @@ export const games: GameListing[] = [
     controls: "Keyboard or touch",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "orchard-drop",
+    title: "Orchard Drop",
+    genre: "Puzzle",
+    tagline: "Drop fruit into a sunny crate and merge two of a kind before the pile spills over.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/orchard-drop.jpg",
+    controls: "Mouse, touch, or keyboard",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
