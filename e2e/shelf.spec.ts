@@ -96,6 +96,25 @@ for (const game of [
   { slug: "stunt-ridge", title: "Stunt Ridge" },
   { slug: "wicks-end", title: "Wick's End" },
   { slug: "wordwell", title: "Wordwell" },
+  { slug: "sweet-snip", title: "Sweet Snip" },
+  { slug: "lab-escape", title: "Lab Escape" },
+  { slug: "monster-haul", title: "Monster Haul" },
+  { slug: "balloon-bastion", title: "Balloon Bastion" },
+  { slug: "inkland", title: "Inkland" },
+  { slug: "corner-pocket", title: "Corner Pocket" },
+  { slug: "patience-parlor", title: "Patience Parlor" },
+  { slug: "glowtail", title: "Glowtail" },
+  { slug: "twofold", title: "Twofold" },
+  { slug: "beatline", title: "Beatline" },
+  { slug: "rim-rivals", title: "Rim Rivals" },
+  { slug: "bubble-reef", title: "Bubble Reef" },
+  { slug: "hop-lanes", title: "Hop Lanes" },
+  { slug: "orchard-drop", title: "Orchard Drop" },
+  { slug: "crumb-tycoon", title: "Crumb Tycoon" },
+  { slug: "lantern-horde", title: "Lantern Horde" },
+  { slug: "sinkhole", title: "Sinkhole" },
+  { slug: "stackfall", title: "Stackfall" },
+  { slug: "ember-and-tide", title: "Ember & Tide" },
 ]) {
   test(`${game.title} opens on its own origin`, async ({ page }) => {
     test.setTimeout(60_000);
@@ -119,59 +138,9 @@ for (const game of [
 test("a game that is not playable returns to discovery", async ({ page }) => {
   await page.goto("/play/vanguard");
   await expect(page).toHaveURL("/");
-  await page.goto("/play/sweet-snip");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/lab-escape");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/monster-haul");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/balloon-bastion");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/inkland");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/corner-pocket");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/patience-parlor");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/glowtail");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/twofold");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/beatline");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/rim-rivals");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/bubble-reef");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/hop-lanes");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/orchard-drop");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/crumb-tycoon");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/lantern-horde");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/sinkhole");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/stackfall");
-  await expect(page).toHaveURL("/");
-  await page.goto("/play/ember-and-tide");
-  await expect(page).toHaveURL("/");
   await page.goto("/play/not-a-game");
   await expect(page).toHaveURL("/");
 });
-
-for (const title of ["Sweet Snip", "Lab Escape", "Monster Haul", "Balloon Bastion", "Inkland", "Corner Pocket", "Patience Parlor", "Glowtail", "Twofold", "Beatline", "Rim Rivals", "Bubble Reef", "Hop Lanes", "Orchard Drop", "Crumb Tycoon", "Lantern Horde", "Sinkhole", "Stackfall", "Ember & Tide"]) {
-  test(`${title} is on the shelf and not playable yet`, async ({ page }) => {
-    await page.goto("/");
-    const card = page.getByRole("article", { name: title });
-    await expect(card).toBeVisible({ timeout: 20_000 });
-    await expect(card.getByText("Coming soon")).toBeVisible();
-    await expect(card.getByRole("link", { name: `Play ${title}` })).toHaveCount(0);
-    await card.getByRole("button", { name: `About ${title}` }).click();
-    await expect(page.getByRole("dialog").getByText("The browser version is packaged and waiting to go live.")).toBeVisible();
-  });
-}
 
 test("search, genre, availability and clear filters work together", async ({ page }) => {
   await page.goto("/");
@@ -182,27 +151,9 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByRole("article")).toHaveCount(28);
-  await page.getByRole("button", { name: "Coming soon 19", exact: true }).click();
-  await expect(page.getByRole("article", { name: "Sweet Snip" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Lab Escape" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Monster Haul" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Balloon Bastion" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Inkland" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Corner Pocket" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Patience Parlor" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Glowtail" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Twofold" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Beatline" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Rim Rivals" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Bubble Reef" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Hop Lanes" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Orchard Drop" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Crumb Tycoon" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Lantern Horde" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Sinkhole" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Stackfall" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Ember & Tide" })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Velocity" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Sweet Snip" })).toHaveCount(0);
 });
 
 test("saving works without an account, persists and can be undone", async ({ page }) => {
