@@ -271,6 +271,17 @@ export const games: GameListing[] = [
     controls: "Mouse, touch, or keyboard",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "crumb-tycoon",
+    title: "Crumb Tycoon",
+    genre: "Arcade",
+    tagline: "Tap a giant pastry, hire bakers, and stack crumbs into an empire.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/crumb-tycoon.jpg",
+    controls: "Mouse, touch, or keyboard",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
