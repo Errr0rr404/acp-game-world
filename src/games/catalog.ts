@@ -194,6 +194,17 @@ export const games: GameListing[] = [
     controls: "Mouse, keyboard, or touch",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "glowtail",
+    title: "Glowtail",
+    genre: "Arcade",
+    tagline: "Swallow drifting light, grow a glowing eel, and coil around AI rivals.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/glowtail.jpg",
+    controls: "Mouse, keyboard, or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
