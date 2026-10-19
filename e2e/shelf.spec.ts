@@ -153,11 +153,13 @@ test("a game that is not playable returns to discovery", async ({ page }) => {
   await expect(page).toHaveURL("/");
   await page.goto("/play/sinkhole");
   await expect(page).toHaveURL("/");
+  await page.goto("/play/stackfall");
+  await expect(page).toHaveURL("/");
   await page.goto("/play/not-a-game");
   await expect(page).toHaveURL("/");
 });
 
-for (const title of ["Sweet Snip", "Lab Escape", "Monster Haul", "Balloon Bastion", "Inkland", "Corner Pocket", "Patience Parlor", "Glowtail", "Twofold", "Beatline", "Rim Rivals", "Bubble Reef", "Hop Lanes", "Orchard Drop", "Crumb Tycoon", "Lantern Horde", "Sinkhole"]) {
+for (const title of ["Sweet Snip", "Lab Escape", "Monster Haul", "Balloon Bastion", "Inkland", "Corner Pocket", "Patience Parlor", "Glowtail", "Twofold", "Beatline", "Rim Rivals", "Bubble Reef", "Hop Lanes", "Orchard Drop", "Crumb Tycoon", "Lantern Horde", "Sinkhole", "Stackfall"]) {
   test(`${title} is on the shelf and not playable yet`, async ({ page }) => {
     await page.goto("/");
     const card = page.getByRole("article", { name: title });
@@ -177,8 +179,8 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await page.getByLabel("Genre", { exact: true }).selectOption("Action");
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(26);
-  await page.getByRole("button", { name: "Coming soon 17", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(27);
+  await page.getByRole("button", { name: "Coming soon 18", exact: true }).click();
   await expect(page.getByRole("article", { name: "Sweet Snip" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Lab Escape" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Monster Haul" })).toBeVisible();
@@ -196,6 +198,7 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await expect(page.getByRole("article", { name: "Crumb Tycoon" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Lantern Horde" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Sinkhole" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Stackfall" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Velocity" })).toHaveCount(0);
 });
 
@@ -236,7 +239,7 @@ test("game details support keyboard dismissal", async ({ page }) => {
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(26);
+  await expect(page.getByRole("article")).toHaveCount(27);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();

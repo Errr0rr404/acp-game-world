@@ -304,6 +304,17 @@ export const games: GameListing[] = [
     controls: "WASD, arrows, or drag",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "stackfall",
+    title: "Stackfall",
+    genre: "Puzzle",
+    tagline: "Drop glassy blocks with hold, ghost, and preview in Marathon, Sprint, and Blitz.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/stackfall.jpg",
+    controls: "Arrows, Z/X, Space, C/Shift, or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
