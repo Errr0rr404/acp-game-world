@@ -117,6 +117,28 @@ export const games: GameListing[] = [
     controls: "Keyboard, mouse or touch",
     soonReason: "The browser version is packaged and waiting to go live.",
   },
+  {
+    slug: "sweet-snip",
+    title: "Sweet Snip",
+    genre: "Puzzle",
+    tagline: "Snip the twine, swing the candy into Mallow, and collect three stars along the way.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/sweet-snip.jpg",
+    controls: "Mouse, touch, or keyboard",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
+  {
+    slug: "lab-escape",
+    title: "Lab Escape",
+    genre: "Arcade",
+    tagline: "Hold to thrust out of Sublevel 9, grabbing coins and dodging the lab's traps.",
+    status: "soon",
+    origin: null,
+    poster: "/posters/lab-escape.jpg",
+    controls: "Hold Space, click, or touch",
+    soonReason: "The browser version is packaged and waiting to go live.",
+  },
 ];
 
 export function getGame(slug: string): GameListing | undefined {
