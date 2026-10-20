@@ -2,6 +2,25 @@ export type GameStatus = "playable" | "soon";
 export const GAME_GENRES = ["Racing", "Action", "Arcade", "Puzzle", "Adventure", "Sports"] as const;
 export type GameGenre = (typeof GAME_GENRES)[number];
 
+/** Who a game is a good first pick for. This is a shelf grouping, not an age gate. */
+export const AUDIENCES = ["kids", "everyone", "older"] as const;
+export type GameAudience = (typeof AUDIENCES)[number];
+
+export const AUDIENCE_LABEL: Record<GameAudience, string> = {
+  kids: "For kids",
+  everyone: "For everyone",
+  older: "A little older",
+};
+
+const KIDS = new Set([
+  "flap-flap-fly", "sweet-snip", "orchard-drop", "crumb-tycoon", "hop-lanes", "bubble-reef",
+  "flock-fling", "sugarlink", "ring-drop", "spring-roof", "glowtail", "balloon-bastion",
+  "tetherfly", "sundial-dash", "marble-hall", "beatline", "mothlight", "ribbon",
+  "amber-drop", "color-shed", "tile-garden", "twofold",
+]);
+
+const OLDER = new Set(["scrapyard-fps", "night-barrage", "lantern-horde"]);
+
 export type GameListing = {
   slug: string;
   title: string;
@@ -20,9 +39,9 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const games: GameListing[] = [
   {
     slug: "velocity",
-    title: "Velocity",
+    title: "Street Racer",
     genre: "Racing",
-    tagline: "Street race at blue hour. Outrun the cops and keep the car.",
+    tagline: "The city is yours. Street races, flying cars, and open roads.",
     status: "playable",
     origin: "https://racing.worldofz.info",
     poster: "/posters/velocity.jpg",
@@ -576,6 +595,12 @@ export function getGame(slug: string): GameListing | undefined {
 
 export function genreForGame(game: GameListing): GameGenre {
   return game.genre ?? getGame(game.slug)?.genre ?? "Arcade";
+}
+
+export function audienceForGame(game: { slug: string }): GameAudience {
+  if (KIDS.has(game.slug)) return "kids";
+  if (OLDER.has(game.slug)) return "older";
+  return "everyone";
 }
 
 /** True only for a bare https origin, with no path, query, port, or login. */

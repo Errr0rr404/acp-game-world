@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { games } from "@/games/catalog";
 import { prepareDatabase } from "./index";
-import { builtinSeedStatement } from "./seed";
+import { builtinSeedStatement, streetRacerRenameStatement } from "./seed";
 
 test("built-in games are inserted once and existing rows are not updated", () => {
   const statement = builtinSeedStatement();
@@ -28,4 +28,9 @@ test("preparing the database seeds the catalog and does not upsert it", async ()
   expect(inserts[0]?.sql).toContain("INSERT IGNORE");
   expect(inserts[0]?.sql).not.toContain("ON DUPLICATE");
   expect(calls.some((call) => call.sql.includes("ON DUPLICATE KEY UPDATE"))).toBe(false);
+  const rename = calls.filter((call) => call.sql.startsWith("UPDATE"));
+  expect(rename).toHaveLength(1);
+  expect(rename[0]?.sql).toContain("title IN ('Velocity', 'VELOCITY')");
+  expect(rename[0]?.values).toEqual(["Street Racer", games.find((game) => game.slug === "velocity")?.tagline]);
+  expect(streetRacerRenameStatement()?.values[0]).toBe("Street Racer");
 });

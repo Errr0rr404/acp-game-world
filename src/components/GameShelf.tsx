@@ -2,8 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { genreForGame, playSrc, type GameListing } from "@/games/catalog";
+import { useEffect, useRef, useState } from "react";
+import {
+  AUDIENCE_LABEL,
+  AUDIENCES,
+  audienceForGame,
+  genreForGame,
+  playSrc,
+  type GameAudience,
+  type GameListing,
+} from "@/games/catalog";
 import { filterGames, type GameFilters } from "@/games/library";
 import { useLibrary } from "@/games/use-library";
 import { GameCard } from "./GameCard";
@@ -13,27 +21,51 @@ import { SaveGameButton } from "./SaveGameButton";
 import { ShareLinkButton } from "./ShareLinkButton";
 import { publicUrl } from "@/site";
 
+const PAGE_SIZE = 12;
+
+const LANE_COPY: Record<GameAudience, string> = {
+  kids: "Bright games with a short rule and a big picture.",
+  everyone: "Races, sports, and puzzles to share.",
+  older: "Shooters and night runs, for players who want more.",
+};
+
 export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; mode?: "discover" | "library" }) {
   const library = useLibrary();
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState("all");
+  const [audience, setAudience] = useState<GameFilters["audience"]>("all");
   const [status, setStatus] = useState<GameFilters["status"]>("all");
   const [collection, setCollection] = useState<"saved" | "recent">("saved");
   const [sort, setSort] = useState("featured");
+  const [page, setPage] = useState(0);
   const [details, setDetails] = useState<GameListing | null>(null);
   const detailTrigger = useRef<HTMLButtonElement | null>(null);
+  const shelfRef = useRef<HTMLElement | null>(null);
   const isLibrary = mode === "library";
   const featured = games.find((game) => playSrc(game));
   const recent = library.recent.map((item) => games.find((game) => game.slug === item.slug)).find((game) => game && playSrc(game));
   const collectionSlugs = collection === "saved" ? library.saved : library.recent.map((item) => item.slug);
   const source = isLibrary ? collectionSlugs.flatMap((slug) => games.filter((game) => game.slug === slug)) : games;
-  const filtered = filterGames(source, { query, genre, status });
+  const filtered = filterGames(source, { query, genre, status, audience });
   const visible = sort === "title" ? [...filtered].sort((a, b) => a.title.localeCompare(b.title)) : filtered;
   const genres = [...new Set(games.map(genreForGame))].sort();
   const playableCount = source.filter((game) => playSrc(game)).length;
-  const hasFilters = Boolean(query.trim() || genre !== "all" || status !== "all");
+  const hasFilters = Boolean(query.trim() || genre !== "all" || audience !== "all" || status !== "all");
+  const showLanes = !isLibrary && !hasFilters && sort === "featured";
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const paged = visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
-  function resetFilters() { setQuery(""); setGenre("all"); setStatus("all"); }
+  useEffect(() => {
+    setPage(0);
+  }, [query, genre, audience, status, sort, collection]);
+
+  function resetFilters() {
+    setQuery("");
+    setGenre("all");
+    setAudience("all");
+    setStatus("all");
+  }
   function openDetails(game: GameListing, trigger: HTMLButtonElement) {
     detailTrigger.current = trigger;
     setDetails(game);
@@ -42,13 +74,20 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
     setDetails(null);
     detailTrigger.current?.focus();
   }
+  function showGroup(next: { genre?: string; audience?: GameFilters["audience"] }) {
+    if (next.genre !== undefined) setGenre(next.genre);
+    if (next.audience !== undefined) setAudience(next.audience);
+    setQuery("");
+    setStatus("all");
+    shelfRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <>
       <div className="page-intro">
         <div>
           <h1>{isLibrary ? "Your library" : "A good day to play."}</h1>
-          <p>{isLibrary ? "Your favorites and recent games, all in one place." : "Little escapes. Big adventures. All in your browser."}</p>
+          <p>{isLibrary ? "Your favorites and recent games, all in one place." : "Games for kids, games to share, and a few for older players. All in your browser."}</p>
         </div>
         <div className="intro-actions">
           <span className="guest-note"><Icon name={isLibrary ? "library" : "gamepad"} />{isLibrary ? "Saved in this browser" : "Jump in. No account needed."}</span>
@@ -64,12 +103,12 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
             <h2 id="featured-title">{featured.title}</h2>
             <p>{featured.tagline}</p>
             <div className="featured-actions">
-              <Link href={`/play/${featured.slug}`} className="button button-primary button-large"><Icon name="play" />Play {featured.title}</Link>
+              <Link href={`/play/${featured.slug}`} className="button button-primary button-large"><Icon name="play" />Play free</Link>
               <SaveGameButton game={featured} />
             </div>
-            <span className="featured-controls"><Icon name="keyboard" />{featured.controls}<span className="status-dot" />Free to play</span>
+            <span className="featured-controls"><Icon name="keyboard" />{featured.controls}<span className="status-dot" />Free in your browser</span>
           </div>
-          <span className="featured-caption">Your next escape starts here.</span>
+          <span className="featured-caption">Play free in your browser.</span>
         </section>
       ) : null}
 
@@ -80,10 +119,33 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
         </div>
       ) : null}
 
-      <section id="games" className="shelf-section" aria-labelledby="shelf-heading">
+      {showLanes ? (
+        <div className="lanes">
+          {AUDIENCES.map((who) => (
+            <GameLane
+              key={who}
+              title={AUDIENCE_LABEL[who]}
+              blurb={LANE_COPY[who]}
+              games={games.filter((game) => audienceForGame(game) === who)}
+              onSeeAll={() => showGroup({ audience: who, genre: "all" })}
+            />
+          ))}
+          {genres.map((item) => (
+            <GameLane
+              key={item}
+              title={item}
+              blurb=""
+              games={games.filter((game) => genreForGame(game) === item)}
+              onSeeAll={() => showGroup({ genre: item, audience: "all" })}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      <section id="games" className="shelf-section" aria-labelledby="shelf-heading" ref={shelfRef}>
         <div className="section-heading">
-          <div><h2 id="shelf-heading">{isLibrary ? "Make it your own." : "Find your next favorite."}</h2><p>{isLibrary ? "Save a game with the heart. Come back whenever you like." : "A small collection, with more worlds on the way."}</p></div>
-          {isLibrary ? <Link href="/" className="button button-secondary">Discover games<Icon name="arrow" /></Link> : <span className="collection-count">{games.length} {games.length === 1 ? "game" : "games"} to discover</span>}
+          <div><h2 id="shelf-heading">{isLibrary ? "Make it your own." : "All the games"}</h2><p>{isLibrary ? "Save a game with the heart. Come back whenever you like." : showLanes ? "Twelve at a time. Use the rows above when you want a kind of game." : "Matching games, twelve at a time."}</p></div>
+          {isLibrary ? <Link href="/" className="button button-secondary">Discover games<Icon name="arrow" /></Link> : <span className="collection-count">{games.length} {games.length === 1 ? "game" : "games"}</span>}
         </div>
 
         {isLibrary ? (
@@ -96,12 +158,34 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
         <div className="shelf-tools">
           <div className="search-field">
             <Icon name="search" />
-            <input type="search" aria-label="Search games" placeholder="Search for your next escape…" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <input type="search" aria-label="Search games" placeholder="Search for a game…" value={query} onChange={(event) => setQuery(event.target.value)} />
             {query ? <button type="button" className="icon-button" aria-label="Clear search" onClick={() => setQuery("")}><Icon name="close" /></button> : null}
           </div>
-          <label className="select-field"><span className="sr-only">Genre</span><select aria-label="Genre" value={genre} onChange={(event) => setGenre(event.target.value)}><option value="all">All genres</option>{genres.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label className="select-field sort-field"><span className="sr-only">Sort games</span><select aria-label="Sort games" value={sort} onChange={(event) => setSort(event.target.value)}><option value="featured">{isLibrary ? "Your order" : "Featured first"}</option><option value="title">Title: A–Z</option></select></label>
         </div>
+
+        {!isLibrary ? (
+          <>
+            <div className="choice-row">
+              <p id="category-label">Category</p>
+              <div className="chip-group" role="group" aria-labelledby="category-label">
+                <button type="button" aria-pressed={genre === "all"} onClick={() => setGenre("all")}>All categories</button>
+                {genres.map((item) => (
+                  <button key={item} type="button" aria-pressed={genre === item} onClick={() => setGenre(item)}>{item}</button>
+                ))}
+              </div>
+            </div>
+            <div className="choice-row">
+              <p id="audience-label">Who it is for</p>
+              <div className="chip-group" role="group" aria-labelledby="audience-label">
+                <button type="button" aria-pressed={audience === "all"} onClick={() => setAudience("all")}>Everyone</button>
+                {AUDIENCES.map((who) => (
+                  <button key={who} type="button" aria-pressed={audience === who} onClick={() => setAudience(who)}>{AUDIENCE_LABEL[who]}</button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
 
         <div className="filter-row">
           <div className="availability-filters" role="group" aria-label="Game availability">
@@ -112,19 +196,55 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
           <span className="result-count" role="status" aria-live="polite">{visible.length} {visible.length === 1 ? "game" : "games"}{hasFilters ? " found" : ""}</span>
         </div>
 
-        {visible.length ? (
-          <ul className="game-grid">{visible.map((game) => <GameCard key={game.slug} game={game} onDetails={openDetails} />)}</ul>
+        {paged.length ? (
+          <ul className="game-grid">{paged.map((game) => <GameCard key={game.slug} game={game} onDetails={openDetails} />)}</ul>
         ) : (
           <div className="empty-state">
             <span className="empty-icon"><Icon name={hasFilters ? "search" : collection === "saved" ? "heart" : "gamepad"} /></span>
             <h3>{hasFilters ? "No games match just yet." : collection === "saved" ? "Keep your favorites close." : "Your next adventure is waiting."}</h3>
-            <p>{hasFilters ? "Try another search or give a different genre a go." : collection === "saved" ? "Tap the heart on any game to add it to your library. No sign-in needed." : "Play a game and you’ll find it here for your next visit."}</p>
+            <p>{hasFilters ? "Try another search or pick a different category." : collection === "saved" ? "Tap the heart on any game to add it to your library. No sign-in needed." : "Play a game and you’ll find it here for your next visit."}</p>
             {hasFilters ? <button type="button" className="button button-primary" onClick={resetFilters}>Clear filters</button> : <Link href="/" className="button button-primary">Discover games<Icon name="arrow" /></Link>}
           </div>
         )}
+        {pageCount > 1 ? (
+          <nav className="pager" aria-label="Pages of games">
+            <button type="button" className="button button-secondary" onClick={() => setPage(safePage - 1)} disabled={safePage === 0}>Previous</button>
+            {Array.from({ length: pageCount }, (_, index) => (
+              <button key={index} type="button" className="button button-secondary" aria-current={index === safePage ? "page" : undefined} onClick={() => setPage(index)}>{index + 1}</button>
+            ))}
+            <button type="button" className="button button-secondary" onClick={() => setPage(safePage + 1)} disabled={safePage === pageCount - 1}>Next</button>
+          </nav>
+        ) : null}
         {isLibrary ? <p className="library-note"><Icon name="info" />This library stays in this browser. <Link href="/me">View your account play history</Link> for games you opened while signed in.</p> : null}
       </section>
       {details ? <GameDetails game={details} onClose={closeDetails} /> : null}
     </>
+  );
+}
+
+function GameLane({ title, blurb, games, onSeeAll }: { title: string; blurb: string; games: GameListing[]; onSeeAll: () => void }) {
+  if (!games.length) return null;
+  const headingId = `lane-${title.replace(/\s+/g, "-").toLowerCase()}`;
+  return (
+    <section className="lane" aria-labelledby={headingId}>
+      <div className="lane-head">
+        <div>
+          <h2 id={headingId}>{title}</h2>
+          {blurb ? <p>{blurb}</p> : null}
+        </div>
+        <button type="button" className="button button-quiet" onClick={onSeeAll}>See all {games.length}<Icon name="arrow" /></button>
+      </div>
+      <ul className="game-rail">
+        {games.map((game) => (
+          <li key={game.slug}>
+            <Link href={`/play/${game.slug}`} className="rail-card">
+              <Image src={game.poster} alt="" width={440} height={248} sizes="220px" />
+              <span className="rail-title">{game.title}</span>
+              <span className="genre-label">{genreForGame(game)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

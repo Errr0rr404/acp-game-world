@@ -1,5 +1,5 @@
-import type { GameListing } from "./catalog";
-import { genreForGame, playSrc } from "./catalog";
+import type { GameAudience, GameListing } from "./catalog";
+import { audienceForGame, genreForGame, playSrc } from "./catalog";
 
 export type LocalLibrary = {
   saved: string[];
@@ -46,15 +46,23 @@ export function withRecentGame(library: LocalLibrary, slug: string, now: number)
   return { ...library, recent: [{ slug, lastPlayed: now }, ...library.recent.filter((item) => item.slug !== slug)].slice(0, 25) };
 }
 
-export type GameFilters = { query: string; genre: string; status: "all" | "playable" | "soon" };
+export type GameFilters = {
+  query: string;
+  genre: string;
+  status: "all" | "playable" | "soon";
+  audience?: "all" | GameAudience;
+};
 
 export function filterGames(games: GameListing[], filters: GameFilters): GameListing[] {
   const words = filters.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const audience = filters.audience ?? "all";
   return games.filter((game) => {
     const genre = genreForGame(game);
+    const who = audienceForGame(game);
     const haystack = `${game.title} ${game.tagline} ${game.controls} ${genre}`.toLowerCase();
     return words.every((word) => haystack.includes(word)) &&
       (filters.genre === "all" || filters.genre === genre) &&
+      (audience === "all" || audience === who) &&
       (filters.status === "all" || (filters.status === "playable" ? Boolean(playSrc(game)) : !playSrc(game)));
   });
 }

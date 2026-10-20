@@ -36,7 +36,8 @@ describe("browser library", () => {
 
 describe("game discovery", () => {
   test("combines search words, genre, and real availability", () => {
-    expect(filterGames(games, { query: "  BLUE  touch ", genre: "Racing", status: "playable" }).map((game) => game.slug)).toEqual(["velocity"]);
+    expect(filterGames(games, { query: "  FLYING  touch ", genre: "Racing", status: "playable" }).map((game) => game.slug)).toEqual(["velocity"]);
+    expect(filterGames(games, { query: "", genre: "all", status: "all", audience: "older" }).map((game) => game.slug)).toEqual(["scrapyard-fps", "lantern-horde", "night-barrage"]);
     expect(filterGames(
       [{ ...games[0]!, slug: "soon-game", title: "Bots", tagline: "bots", genre: "Action", status: "soon", origin: null, soonReason: "Later." }],
       { query: "bots", genre: "Action", status: "soon" },

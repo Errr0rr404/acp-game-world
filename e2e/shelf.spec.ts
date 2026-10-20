@@ -13,10 +13,10 @@ test("discovery launches the real game address and keeps upcoming games unavaila
   await gameFixture(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "A good day to play." })).toBeVisible();
-  const velocity = page.getByRole("article", { name: "Velocity" });
+  const velocity = page.getByRole("article", { name: "Street Racer" });
   await expect(page.getByRole("article", { name: "Vanguard" })).toHaveCount(0);
-  await expect(velocity.getByRole("link", { name: "Play Velocity" })).toBeVisible();
-  await velocity.getByRole("link", { name: "Play Velocity" }).click();
+  await expect(velocity.getByRole("link", { name: "Play Street Racer" })).toBeVisible();
+  await velocity.getByRole("link", { name: "Play Street Racer" }).click();
   await expect(page).toHaveURL("/play/velocity");
   await expect(page.locator("[data-frame-state]")).toBeVisible({ timeout: 20_000 });
   // Server-side framing permission is determined by the game's actual response headers.
@@ -30,7 +30,7 @@ test("discovery launches the real game address and keeps upcoming games unavaila
     })), gameOrigin);
     await expect(page).toHaveURL("/play/velocity");
   } else {
-    await expect(page.getByRole("heading", { name: "Velocity cannot open here right now." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Street Racer cannot open here right now." })).toBeVisible();
   }
   await expect(page.getByRole("link", { name: "Open on its own site" }).last()).toHaveAttribute("href", `${gameOrigin}/`);
   await page.getByRole("button", { name: "Game controls", exact: true }).click();
@@ -47,7 +47,7 @@ test("recent games appear in the library and offer a quick return", async ({ pag
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", JSON.stringify({ saved: [], recent: [{ slug: "velocity", lastPlayed: Date.now() }] })));
   await page.goto("/library");
   await page.getByRole("button", { name: "Recently played 1" }).click();
-  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Discover" }).click();
   await expect(page.getByRole("link", { name: "Play again", exact: true })).toHaveAttribute("href", "/play/velocity");
 });
@@ -146,6 +146,7 @@ for (const game of [
       body: `<!doctype html><html><body>${game.title}</body></html>`,
     }));
     await page.goto("/");
+    await page.getByRole("searchbox", { name: "Search games" }).fill(game.title);
     const card = page.getByRole("article", { name: game.title });
     await card.getByRole("link", { name: `Play ${game.title}` }).click();
     await expect(page).toHaveURL(`/play/${game.slug}`);
@@ -166,13 +167,14 @@ test("a game that is not playable returns to discovery", async ({ page }) => {
 
 test("search, genre, availability and clear filters work together", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("searchbox", { name: "Search games" }).fill("BLUE touch");
-  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search games" }).fill("flying");
+  await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Vanguard" })).toHaveCount(0);
-  await page.getByLabel("Genre", { exact: true }).selectOption("Action");
+  await page.getByRole("group", { name: "Category" }).getByRole("button", { name: "Action", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(50);
+  await expect(page.getByRole("article")).toHaveCount(12);
+  await expect(page.getByRole("status")).toContainText("50 games");
   await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await expect(page.getByRole("article", { name: "Sweet Snip" })).toHaveCount(0);
@@ -182,26 +184,26 @@ test("saving works without an account, persists and can be undone", async ({ pag
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Discover" }).click();
-  const velocity = page.getByRole("article", { name: "Velocity" });
-  await velocity.getByRole("button", { name: "Save Velocity", exact: true }).click();
-  await expect(velocity.getByRole("button", { name: "Unsave Velocity" })).toHaveAttribute("aria-pressed", "true");
+  const velocity = page.getByRole("article", { name: "Street Racer" });
+  await velocity.getByRole("button", { name: "Save Street Racer", exact: true }).click();
+  await expect(velocity.getByRole("button", { name: "Unsave Street Racer" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Your library" }).click();
   await expect(page).toHaveURL("/library");
   await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
-  await page.getByRole("button", { name: "Unsave Velocity" }).click();
+  await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
+  await page.getByRole("button", { name: "Unsave Street Racer" }).click();
   await expect(page.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
 });
 
 test("game details support keyboard dismissal", async ({ page }) => {
   await page.goto("/");
-  const trigger = page.getByRole("button", { name: "About Velocity" });
+  const trigger = page.getByRole("button", { name: "About Street Racer" });
   await trigger.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Velocity" })).toBeVisible();
-  await expect(dialog.getByRole("link", { name: "Play Velocity" })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Street Racer" })).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Play Street Racer" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Close game details" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -215,12 +217,12 @@ test("game details support keyboard dismissal", async ({ page }) => {
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(50);
+  await expect(page.getByRole("article")).toHaveCount(12);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();
-  await page.getByRole("article", { name: "Velocity" }).getByRole("button", { name: "Save Velocity", exact: true }).click();
-  await expect(other.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await page.getByRole("article", { name: "Street Racer" }).getByRole("button", { name: "Save Street Racer", exact: true }).click();
+  await expect(other.getByRole("article", { name: "Street Racer" })).toBeVisible();
   await other.close();
 });
 
@@ -230,9 +232,9 @@ test("library remains usable when browser storage is unavailable", async ({ page
     Storage.prototype.setItem = () => { throw new Error("Storage disabled"); };
   });
   await page.goto("/");
-  await page.getByRole("article", { name: "Velocity" }).getByRole("button", { name: "Save Velocity", exact: true }).click();
+  await page.getByRole("article", { name: "Street Racer" }).getByRole("button", { name: "Save Street Racer", exact: true }).click();
   await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Your library" }).click();
-  await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
 });
 
 test("phone and tablet layouts stay on screen, including the game toolbar", async ({ page }) => {
@@ -240,12 +242,12 @@ test("phone and tablet layouts stay on screen, including the game toolbar", asyn
   for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/");
-    await expect(page.getByRole("article", { name: "Velocity" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Street Racer" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   }
   await page.setViewportSize({ width: 320, height: 844 });
   await gameFixture(page);
-  await page.getByRole("article", { name: "Velocity" }).getByRole("link", { name: "Play Velocity" }).click();
+  await page.getByRole("article", { name: "Street Racer" }).getByRole("link", { name: "Play Street Racer" }).click();
   await expect(page.getByRole("link", { name: "Leave game" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });

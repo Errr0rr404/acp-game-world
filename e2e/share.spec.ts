@@ -64,8 +64,8 @@ test("a playable game's details share its direct play URL", async ({ page }) => 
     Object.defineProperty(navigator, "clipboard", { value: { writeText: async (url: string) => { Object.assign(window, { copiedShareUrl: url }); } }, configurable: true });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "About Velocity" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Share Velocity", exact: true }).click();
+  await page.getByRole("button", { name: "About Street Racer" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Share Street Racer", exact: true }).click();
   await expect(page.getByText("Link copied. Send it to a friend.", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as Window & { copiedShareUrl?: string }).copiedShareUrl)).toBe(`${publicSite}/play/velocity`);
 });

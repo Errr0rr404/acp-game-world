@@ -24,10 +24,22 @@ export function builtinSeedStatement(): { sql: string; values: unknown[] } | nul
   };
 }
 
+/** Rename the racing game in databases that were seeded under the old title. */
+export function streetRacerRenameStatement(): { sql: string; values: unknown[] } | null {
+  const street = games.find((game) => game.slug === "velocity");
+  if (!street) return null;
+  return {
+    sql: "UPDATE `game_listing` SET title = ?, tagline = ? WHERE slug = 'velocity' AND title IN ('Velocity', 'VELOCITY')",
+    values: [street.title, street.tagline],
+  };
+}
+
 export async function seedBuiltinGames(
   query: (sql: string, values?: unknown[]) => Promise<unknown>,
 ): Promise<void> {
   const statement = builtinSeedStatement();
   if (!statement) return;
   await query(statement.sql, statement.values);
+  const rename = streetRacerRenameStatement();
+  if (rename) await query(rename.sql, rename.values);
 }

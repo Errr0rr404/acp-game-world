@@ -24,7 +24,8 @@ function listing(overrides: Partial<GameListing>): GameListing {
 }
 
 describe("catalog", () => {
-  test("frames Velocity at its own origin and nowhere else", () => {
+  test("frames Street Racer at its own origin and nowhere else", () => {
+    expect(getGame("velocity")!.title).toBe("Street Racer");
     expect(playSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/");
     expect(frameSrc(getGame("velocity")!)).toBe("https://racing.worldofz.info/?hub=1");
     expect(getGame("vanguard")).toBeUndefined();
