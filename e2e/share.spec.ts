@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const publicSite = "https://game.agentcontrolpanel.dev";
+const publicSite = "https://games.agentcontrolpanel.dev";
 
 test("Share Game World copies the public URL without local or account parameters", async ({ page }) => {
   await page.addInitScript(() => {
@@ -72,7 +72,7 @@ test("a playable game's details share its direct play URL", async ({ page }) => 
 
 test("shared links advertise a working PNG preview and canonical public URL", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /^https:\/\/game\.agentcontrolpanel\.dev\/?$/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /^https:\/\/games\.agentcontrolpanel\.dev\/?$/);
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
   const image = page.locator('meta[property="og:image"]').first();
   // Next.js intentionally serves file-based social images from localhost in dev.

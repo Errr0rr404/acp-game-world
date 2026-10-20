@@ -20,7 +20,7 @@ pnpm test:e2e
 
 Open http://127.0.0.1:3000.
 
-The public app is https://game.agentcontrolpanel.dev. `NEXT_PUBLIC_SITE_URL` controls canonical URLs and share links; it defaults to that public address and is read at build time.
+The public app is https://games.agentcontrolpanel.dev. https://game.agentcontrolpanel.dev is the same site and redirects there. `NEXT_PUBLIC_SITE_URL` controls canonical URLs and share links; it defaults to the public address and is read at build time.
 
 `DATABASE_URL` and `BETTER_AUTH_SECRET` turn on optional accounts. Without `RESEND_API_KEY`, a development server shows the sign-in link on the page instead of emailing it. `APPROVED_ORIGINS` is the only list of sites the shelf is allowed to frame. `OPERATOR_EMAILS` can edit that shelf.
 

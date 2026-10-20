@@ -48,6 +48,7 @@ function createAuth(db: NonNullable<ReturnType<typeof getDb>>, secret: string) {
     trustedOrigins: [
       "http://127.0.0.1:3000",
       "http://localhost:3000",
+      "https://games.agentcontrolpanel.dev",
       "https://game.agentcontrolpanel.dev",
     ],
     database: drizzleAdapter(db, { provider: "mysql", schema }),

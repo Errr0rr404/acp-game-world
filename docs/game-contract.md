@@ -9,7 +9,7 @@ A browser game can join the shelf without being copied into this repo. It stays 
 - Send this response header, and no `X-Frame-Options: DENY`:
 
 ```
-Content-Security-Policy: frame-ancestors https://game.agentcontrolpanel.dev
+Content-Security-Policy: frame-ancestors https://games.agentcontrolpanel.dev https://game.agentcontrolpanel.dev
 ```
 
 Local development also needs `http://localhost:3000` and `http://127.0.0.1:3000` in that list.
