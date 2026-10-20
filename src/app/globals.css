@@ -229,6 +229,10 @@ body:has(dialog[open]) { overflow: hidden; }
 .auth-success h3 { font-size: 28px; }
 .auth-success strong { color: var(--text); overflow-wrap: anywhere; }
 
+.medal-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 28px; padding: 0; list-style: none; }
+.medal { min-width: 140px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.medal[data-earned="true"] { border-color: var(--mint); }
+.medal small { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
 .history-list { padding: 0; margin: 28px 0 54px; list-style: none; display: grid; gap: 16px; }
 .history-card { display: flex; align-items: center; gap: 23px; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
 .history-card img { width: 170px; height: 100px; border-radius: 10px; object-fit: cover; }

@@ -15,7 +15,7 @@ export default function SignInPage() {
     <div className="auth-layout">
       <div className="auth-story">
         <h1>Sign in</h1>
-        <p>A familiar place for your next adventure. Keep your play history with you, wherever you sign in.</p>
+        <p>A familiar place for your next adventure. Sign in to keep your games, results, and medals with you.</p>
         <ul className="auth-benefits">
           <li><span><Icon name="clock" /></span><div><strong>Pick up the thread</strong>See which games you played and jump back in.</div></li>
           <li><span><Icon name="gamepad" /></span><div><strong>Just an email away</strong>A sign-in link. No password to remember.</div></li>

@@ -1,4 +1,4 @@
-import { boolean, index, int, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlTable, primaryKey, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 const when = (name: string) => timestamp(name, { fsp: 3 }).notNull().defaultNow();
 
@@ -77,8 +77,23 @@ export const playSession = mysqlTable(
     startedAt: when("started_at"),
     endedAt: timestamp("ended_at", { fsp: 3 }),
     summary: text("summary"),
+    outcome: varchar("outcome", { length: 16 }),
+    score: int("score"),
+    resultCount: int("result_count").notNull().default(0),
   },
   (table) => [index("play_session_user_started_idx").on(table.userId, table.startedAt)],
+);
+
+export const savedGame = mysqlTable(
+  "saved_game",
+  {
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    gameSlug: varchar("game_slug", { length: 128 }).notNull(),
+    createdAt: when("created_at"),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.gameSlug] })],
 );
 
 export const gameListing = mysqlTable("game_listing", {

@@ -7,7 +7,8 @@ export type LocalLibrary = {
 };
 
 export const EMPTY_LIBRARY: LocalLibrary = { saved: [], recent: [] };
-const VALID_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const LIBRARY_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const VALID_SLUG = LIBRARY_SLUG;
 
 export function parseLibrary(raw: string | null): LocalLibrary {
   if (!raw) return EMPTY_LIBRARY;

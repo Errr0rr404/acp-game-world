@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { parseGameMessage } from "@/games/bridge";
+import { parseGameMessage, type GameResult } from "@/games/bridge";
 import { classifyFrameDocument, type FramePermission, type FrameVerdict } from "@/games/frame";
 import { rememberGame } from "@/games/use-library";
 import { Icon } from "./Icon";
@@ -30,7 +30,7 @@ export function PlayFrame({ slug, title, controls, frameSrc, siteHref, permissio
   const started = useRef(false);
   const mounted = useRef(false);
   const leaving = useRef(false);
-  const latestResult = useRef<string | null>(null);
+  const latestResult = useRef<GameResult | null>(null);
   const [verdict, setVerdict] = useState<FrameVerdict>(permission === "blocked" ? "blocked" : "pending");
   const [attempt, setAttempt] = useState(0);
   const [slowDismissed, setSlowDismissed] = useState(false);
@@ -51,12 +51,14 @@ export function PlayFrame({ slug, title, controls, frameSrc, siteHref, permissio
     void fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true }).catch(() => {});
   }, []);
 
-  const saveResult = useCallback(async (summary: string) => {
+  const saveResult = useCallback(async (result: GameResult) => {
     const id = sessionId.current;
     if (!id) return;
     try {
       const response = await fetch(`/api/sessions/${encodeURIComponent(id)}`, {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ summary }),
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ summary: result.summary, outcome: result.outcome, score: result.score }),
       });
       if (mounted.current && !leaving.current) setMessage(response.ok ? "Result saved to your play history." : "Your result could not be saved. You can keep playing.");
     } catch {
@@ -115,8 +117,8 @@ export function PlayFrame({ slug, title, controls, frameSrc, siteHref, permissio
         endSession();
         router.push("/");
       } else if (parsed.type === "game.result") {
-        latestResult.current = parsed.summary;
-        void saveResult(parsed.summary);
+        latestResult.current = parsed;
+        void saveResult(parsed);
       }
     }
     window.addEventListener("message", onMessage);

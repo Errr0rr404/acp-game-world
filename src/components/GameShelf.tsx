@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   AUDIENCE_LABEL,
   AUDIENCES,
@@ -13,7 +13,7 @@ import {
   type GameListing,
 } from "@/games/catalog";
 import { filterGames, type GameFilters } from "@/games/library";
-import { useLibrary } from "@/games/use-library";
+import { useLibrary, useLibrarySource } from "@/games/use-library";
 import { GameCard } from "./GameCard";
 import { GameDetails } from "./GameDetails";
 import { Icon } from "./Icon";
@@ -31,13 +31,14 @@ const LANE_COPY: Record<GameAudience, string> = {
 
 export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; mode?: "discover" | "library" }) {
   const library = useLibrary();
+  const librarySource = useLibrarySource();
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState("all");
   const [audience, setAudience] = useState<GameFilters["audience"]>("all");
   const [status, setStatus] = useState<GameFilters["status"]>("all");
   const [collection, setCollection] = useState<"saved" | "recent">("saved");
   const [sort, setSort] = useState("featured");
-  const [page, setPage] = useState(0);
+  const [pageState, setPageState] = useState({ key: "", page: 0 });
   const [details, setDetails] = useState<GameListing | null>(null);
   const detailTrigger = useRef<HTMLButtonElement | null>(null);
   const shelfRef = useRef<HTMLElement | null>(null);
@@ -53,12 +54,13 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
   const hasFilters = Boolean(query.trim() || genre !== "all" || audience !== "all" || status !== "all");
   const showLanes = !isLibrary && !hasFilters && sort === "featured";
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const filterKey = `${query}|${genre}|${audience}|${status}|${sort}|${collection}`;
+  const page = pageState.key === filterKey ? pageState.page : 0;
   const safePage = Math.min(page, pageCount - 1);
   const paged = visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-
-  useEffect(() => {
-    setPage(0);
-  }, [query, genre, audience, status, sort, collection]);
+  function setPage(next: number) {
+    setPageState({ key: filterKey, page: next });
+  }
 
   function resetFilters() {
     setQuery("");
@@ -215,7 +217,7 @@ export function GameShelf({ games, mode = "discover" }: { games: GameListing[]; 
             <button type="button" className="button button-secondary" onClick={() => setPage(safePage + 1)} disabled={safePage === pageCount - 1}>Next</button>
           </nav>
         ) : null}
-        {isLibrary ? <p className="library-note"><Icon name="info" />This library stays in this browser. <Link href="/me">View your account play history</Link> for games you opened while signed in.</p> : null}
+        {isLibrary ? <p className="library-note"><Icon name="info" />{librarySource === "account" ? "Hearts on this account stay with you." : "Hearts in this browser stay on this device until you sign in."} <Link href="/me">Your portfolio</Link> keeps the games you open while signed in.</p> : null}
       </section>
       {details ? <GameDetails game={details} onClose={closeDetails} /> : null}
     </>

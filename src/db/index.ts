@@ -119,6 +119,9 @@ const SCHEMA_STATEMENTS = [
       started_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
       ended_at timestamp(3) NULL,
       summary text,
+      outcome varchar(16) NULL,
+      score int NULL,
+      result_count int NOT NULL DEFAULT 0,
       PRIMARY KEY (id),
       KEY play_session_user_started_idx (user_id, started_at),
       CONSTRAINT play_session_user_id_fk FOREIGN KEY (user_id) REFERENCES \`user\` (id) ON DELETE CASCADE
@@ -136,6 +139,13 @@ const SCHEMA_STATEMENTS = [
       genre varchar(64),
       PRIMARY KEY (slug)
     )`,
+  `CREATE TABLE IF NOT EXISTS \`saved_game\` (
+      user_id varchar(255) NOT NULL,
+      game_slug varchar(128) NOT NULL,
+      created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (user_id, game_slug),
+      CONSTRAINT saved_game_user_id_fk FOREIGN KEY (user_id) REFERENCES \`user\` (id) ON DELETE CASCADE
+    )`,
 ];
 
 /** Schema and the one-time catalog seed. A failed attempt is retried on the next call. */
@@ -146,6 +156,14 @@ export async function prepareDatabase(pool: mysql.Pool): Promise<void> {
      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_listing' AND COLUMN_NAME = 'genre' LIMIT 1`,
   );
   if (columns.length === 0) await pool.query("ALTER TABLE `game_listing` ADD COLUMN genre varchar(64) NULL");
+  const [playColumns] = await pool.query<mysql.RowDataPacket[]>(
+    `SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'play_session'`,
+  );
+  const playNames = new Set(playColumns.map((column) => String(column.name)));
+  if (!playNames.has("outcome")) await pool.query("ALTER TABLE `play_session` ADD COLUMN outcome varchar(16) NULL");
+  if (!playNames.has("score")) await pool.query("ALTER TABLE `play_session` ADD COLUMN score int NULL");
+  if (!playNames.has("result_count")) await pool.query("ALTER TABLE `play_session` ADD COLUMN result_count int NOT NULL DEFAULT 0");
   await seedBuiltinGames((sql, values) => pool.query(sql, values as never));
 }
 
@@ -216,29 +234,73 @@ export async function startPlaySession(userId: string, gameSlug: string): Promis
   return id;
 }
 
+const RESULT_LIMIT = 12;
+
+export type SessionUpdate = "saved" | "missing" | "limited";
+
 export async function updatePlaySession(
   id: string,
   userId: string,
-  patch: { summary?: string; end?: boolean },
-): Promise<boolean> {
+  patch: { summary?: string | null; outcome?: "win" | "loss" | "done" | null; score?: number | null; end?: boolean },
+): Promise<SessionUpdate> {
   const db = getDb();
-  if (!db) return false;
+  if (!db) return "missing";
   await ensureSchema();
-  if (patch.summary === undefined && !patch.end) return false;
-  const updated = await db
-    .update(schema.playSession)
-    .set({
-      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
-      ...(patch.end ? { endedAt: sql`coalesce(${schema.playSession.endedAt}, now(3))` } : {}),
-    })
-    .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)));
-  if (affected(updated) > 0) return true;
-  const [row] = await db
-    .select({ id: schema.playSession.id })
+  const hasResult = patch.summary !== undefined || patch.outcome !== undefined || patch.score !== undefined;
+  if (!hasResult && !patch.end) return "missing";
+  const [existing] = await db
+    .select({ id: schema.playSession.id, resultCount: schema.playSession.resultCount })
     .from(schema.playSession)
     .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)))
     .limit(1);
-  return Boolean(row);
+  if (!existing) return "missing";
+  if (hasResult && existing.resultCount >= RESULT_LIMIT) return "limited";
+  await db
+    .update(schema.playSession)
+    .set({
+      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.outcome !== undefined ? { outcome: patch.outcome } : {}),
+      ...(patch.score !== undefined ? { score: patch.score } : {}),
+      ...(hasResult ? { resultCount: existing.resultCount + 1 } : {}),
+      ...(patch.end ? { endedAt: sql`coalesce(${schema.playSession.endedAt}, now(3))` } : {}),
+    })
+    .where(and(eq(schema.playSession.id, id), eq(schema.playSession.userId, userId)));
+  return "saved";
+}
+
+export async function savedSlugsForUser(userId: string): Promise<string[]> {
+  const db = getDb();
+  if (!db) return [];
+  await ensureSchema();
+  const rows = await db
+    .select({ gameSlug: schema.savedGame.gameSlug })
+    .from(schema.savedGame)
+    .where(eq(schema.savedGame.userId, userId))
+    .orderBy(desc(schema.savedGame.createdAt));
+  return rows.map((row) => row.gameSlug);
+}
+
+export async function setSavedGame(userId: string, slug: string, saved: boolean): Promise<void> {
+  const db = getDb();
+  if (!db) return;
+  await ensureSchema();
+  if (!saved) {
+    await db.delete(schema.savedGame).where(and(eq(schema.savedGame.userId, userId), eq(schema.savedGame.gameSlug, slug)));
+    return;
+  }
+  await db
+    .insert(schema.savedGame)
+    .values({ userId, gameSlug: slug })
+    .onDuplicateKeyUpdate({ set: { gameSlug: slug } });
+}
+
+export async function mergeSavedGames(userId: string, slugs: string[]): Promise<string[]> {
+  const current = await savedSlugsForUser(userId);
+  const next = [...new Set([...slugs, ...current])].slice(0, 100);
+  for (const slug of next) {
+    if (!current.includes(slug)) await setSavedGame(userId, slug, true);
+  }
+  return next;
 }
 
 export async function playsForUser(userId: string) {
