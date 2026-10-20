@@ -1,24 +1,13 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
 @theme inline {
   --font-sans: var(--font-atkinson), "Atkinson Hyperlegible", sans-serif;
   --font-display: var(--font-space), sans-serif;
-  --color-ink: #101426;
-  --color-sky: #101426;
-  --color-paper: #f4f6ff;
-  --color-sun: #b8a5ff;
-}
-
-:root {
-  --background: #101426;
-  --surface: #191f36;
-  --surface-raised: #222a44;
-  --text: #f4f6ff;
-  --muted: #acb5d0;
-  --accent: #b8a5ff;
-  --mint: #91e4c3;
-  --border: #303852;
-  color-scheme: dark;
+  --color-ink: var(--bg);
+  --color-sky: var(--bg);
+  --color-paper: var(--text);
+  --color-sun: var(--accent);
 }
 
 * { box-sizing: border-box; }

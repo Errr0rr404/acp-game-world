@@ -1,7 +1,11 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { allowsFrame, ancestorOrigin, classifyFrameDocument, frameAncestorSources, readFramePermission } from "./frame";
+import { allowsFrame, ancestorOrigin, classifyFrameDocument, clearFramePermissionCache, FRAME_PERMISSION_TTL_MS, frameAncestorSources, readFramePermission } from "./frame";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  clearFramePermissionCache();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 test("a cross-origin document means the game accepted the frame", () => {
   expect(classifyFrameDocument("cross-origin", "")).toBe("playing");
@@ -38,6 +42,22 @@ test("a failed game response is unavailable even without framing headers", async
 test("a network failure does not pretend that a game refused framing", async () => {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
   expect(await readFramePermission("https://racing.worldofz.info", "https://games.example")).toBe("unreachable");
+});
+
+test("framing headers are fetched once per origin until the minute is up", async () => {
+  let now = 1_000_000;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  const fetchMock = vi.fn().mockResolvedValue(new Response("ok", {
+    headers: { "content-security-policy": "frame-ancestors https://games.example" },
+  }));
+  vi.stubGlobal("fetch", fetchMock);
+  const src = "https://racing.worldofz.info/play";
+  expect(await readFramePermission(src, "https://games.example")).toBe("allowed");
+  expect(await readFramePermission("https://racing.worldofz.info", "https://games.example")).toBe("allowed");
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  now += FRAME_PERMISSION_TTL_MS;
+  expect(await readFramePermission(src, "https://games.example")).toBe("allowed");
+  expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
 test("an allowlist names the hub and nobody else", () => {

@@ -2,6 +2,7 @@ import { getAuth, takeDevLink } from "@/auth";
 import { ensureSchema, openSignInGate } from "@/db";
 import { accountsEnabled, signInError } from "@/games/policy";
 import { sameOrigin } from "@/security/request";
+import { signInClientAddress, signInRateMessage } from "@/security/sign-in-limit";
 
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ ok: false, message: "That request came from the wrong site." }, { status: 403 });
@@ -16,6 +17,8 @@ export async function POST(request: Request) {
   const auth = getAuth();
   if (!auth) return Response.json({ ok: false, message: "Accounts are not turned on yet." }, { status: 503 });
   const normalized = email.trim().toLowerCase();
+  const limited = signInRateMessage(normalized, signInClientAddress(request));
+  if (limited) return Response.json({ ok: false, message: limited }, { status: 429 });
   try {
     await ensureSchema();
     await openSignInGate(normalized);

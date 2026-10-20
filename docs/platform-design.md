@@ -4,6 +4,8 @@ How Game World grows from a curated shelf of 28 framed games into a publishing p
 
 ## Scaling review of the current hub
 
+The load problems in this section are fixed on this branch. The paragraphs are the review that motivated the fix. What shipped is under Phase 0 in the roadmap.
+
 Games run on their own sites inside an iframe, so game traffic never reaches this server. Many people playing different games at once is mostly fine. Three things in the hub itself will hurt under load:
 
 1. **Every page view writes to the database.** `loadGames()` (`src/db/index.ts:162-178`) upserts all built-in games into `game_listing` with `INSERT … ON DUPLICATE KEY UPDATE` on every call. It runs on every view of the home page, library, history and play pages, and again on every session start (`src/app/api/sessions/route.ts:13`). Concurrent multi-row upserts on the same rows cause InnoDB lock waits and deadlocks. When one fails, the `catch` silently falls back to the built-in list, hiding operator edits and database-only games.
@@ -235,6 +237,10 @@ Phase 0: Fix the hub --[load test passes]--> Phase 1: Foundations --[own games o
 ```
 
 1. **Phase 0, fix the hub (this repo, now).** Stop upserting the catalog on every request; cache catalog reads and invalidate on operator save; cache framing-header checks per origin; add timeouts to writes; pull today's CSS variables into a tokens file. Gate: a load test of the play flow passes without database errors.
+
+   Landed on this branch. Built-in games are inserted once with `INSERT IGNORE` while the schema is prepared, and page views only read. Those reads stay in memory for 30 seconds and are dropped when an operator saves. Framing checks are cached for one minute per game origin and hub origin, and concurrent play pages share one fetch. Every statement times out after 5 seconds, including writes; a timed-out statement drops its connection. Lock waits, and the wait for a free connection, use the same deadline. The pool stays at 5 connections with a queue of 50. Signed-in sessions use better-auth's cookie cache for 5 minutes. `/api/sign-in` allows 5 links per email and 30 per address in 15 minutes, counted in this process. Play-page link previews read the cached catalog, so an operator's title is used. Tokens live in `src/styles/tokens.css`. The gate is `src/db/play-flow.test.ts`.
+
+   Not in this phase: pruning `play_session` (the index is fine for now), a rate limit shared across servers, and phases 1–3. Those wait on the open decisions below.
 2. **Phase 1, foundations.** Move the catalog into the database with an admin tool; stand up object storage and the game CDN and move our own studio's games onto it; ship SDK v2 (lifecycle, player, saves) while keeping v1; add game and tag pages, tags, and the search index; sync guest libraries to accounts. Gate: our own games run from the CDN.
 3. **Phase 2, invited developers.** Developer portal, automated build checks, review queue and staged releases; ads through the SDK; the analytics pipeline and ranked shelves; per-game revenue reporting. Gate: review and payouts work end to end for outside developers.
 4. **Phase 3, open platform.** Open submissions, payouts, leaderboards and achievements, personalized rows, localization, and multi-region serving.
