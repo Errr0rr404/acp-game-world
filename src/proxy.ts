@@ -13,6 +13,8 @@ export function proxy(request: NextRequest) {
   if (host !== ALIAS_HOST) return NextResponse.next();
   const url = request.nextUrl.clone();
   url.protocol = "https:";
-  url.host = MAIN_HOST;
+  url.hostname = MAIN_HOST;
+  // The app listens on 3000, and that port leaks into nextUrl behind the proxy.
+  url.port = "";
   return NextResponse.redirect(url, 308);
 }
