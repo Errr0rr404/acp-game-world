@@ -50,7 +50,7 @@ async function History() {
         const when = play.startedAt.toLocaleDateString("en", { dateStyle: "medium", timeZone: "UTC" });
         return <li key={play.id} className="history-card">
           {game ? <Image src={game.poster} alt="" width={340} height={200} sizes="170px" /> : null}
-          <div className="history-info"><h2>{game?.title ?? play.gameSlug}</h2><p>Last played <time dateTime={play.startedAt.toISOString()}>{when}</time></p>{play.outcome ? <p className="history-result">{play.outcome === "win" ? "Win" : play.outcome === "loss" ? "Loss" : "Finished"}{typeof play.score === "number" ? ` · ${play.score.toLocaleString("en")}` : ""}</p> : null}{play.summary ? <p className="history-result">{play.summary}</p> : null}</div>
+          <div className="history-info"><h2>{game?.title ?? play.gameSlug}</h2><p>Last played <time dateTime={play.startedAt.toISOString()}>{when}</time></p>{play.outcome === "win" || play.outcome === "loss" || play.outcome === "done" ? <p className="history-result">{play.outcome === "win" ? "Win" : play.outcome === "loss" ? "Loss" : "Finished"}{typeof play.score === "number" ? ` · ${play.score.toLocaleString("en")}` : ""}</p> : null}{play.summary ? <p className="history-result">{play.summary}</p> : null}</div>
           {game && playSrc(game) ? <div className="history-actions"><Link href={`/play/${game.slug}`} className="button button-primary"><Icon name="play" />Play again</Link></div> : null}
         </li>;
       })}

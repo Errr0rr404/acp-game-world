@@ -4,7 +4,7 @@ export type PlayRow = {
   startedAt: Date;
   endedAt: Date | null;
   summary: string | null;
-  outcome?: "win" | "loss" | "done" | null;
+  outcome?: string | null;
   score?: number | null;
 };
 
