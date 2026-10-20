@@ -136,6 +136,7 @@ for (const game of [
   { slug: "putt-yard", title: "Putt Yard" },
   { slug: "keylane", title: "Keylane" },
   { slug: "cinder-grid", title: "Cinder Grid" },
+  { slug: "march-court", title: "March Court" },
 ]) {
   test(`${game.title} opens on its own origin`, async ({ page }) => {
     test.setTimeout(60_000);
@@ -171,7 +172,7 @@ test("search, genre, availability and clear filters work together", async ({ pag
   await page.getByLabel("Genre", { exact: true }).selectOption("Action");
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("article")).toHaveCount(49);
+  await expect(page.getByRole("article")).toHaveCount(50);
   await page.getByRole("button", { name: "Coming soon 0", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No games match just yet." })).toBeVisible();
   await expect(page.getByRole("article", { name: "Sweet Snip" })).toHaveCount(0);
@@ -214,7 +215,7 @@ test("game details support keyboard dismissal", async ({ page }) => {
 test("saved library syncs between tabs and tolerates corrupt storage", async ({ page, context }) => {
   await page.addInitScript(() => localStorage.setItem("game-world-library-v1", "{broken"));
   await page.goto("/");
-  await expect(page.getByRole("article")).toHaveCount(49);
+  await expect(page.getByRole("article")).toHaveCount(50);
   const other = await context.newPage();
   await other.goto("/library");
   await expect(other.getByRole("heading", { name: "Keep your favorites close." })).toBeVisible();

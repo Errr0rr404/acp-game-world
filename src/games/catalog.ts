@@ -556,6 +556,17 @@ export const games: GameListing[] = [
     poster: "/posters/cinder-grid.jpg",
     controls: "WASD and Space, or arrows and Enter",
     soonReason: null,
+  },
+  {
+    slug: "march-court",
+    title: "March Court",
+    genre: "Puzzle",
+    tagline: "Move the full court, with check, mate, castling, and en passant.",
+    status: "playable",
+    origin: "https://march-court.liveapps.dev",
+    poster: "/posters/march-court.jpg",
+    controls: "Click or tap a piece, then a square",
+    soonReason: null,
   }
 ];
 
