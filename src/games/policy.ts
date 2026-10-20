@@ -47,6 +47,7 @@ const DEFAULT_APPROVED = [
   "https://ring-drop.liveapps.dev",
   "https://putt-yard.liveapps.dev",
   "https://keylane.liveapps.dev",
+  "https://cinder-grid.liveapps.dev",
 ];
 
 export function approvedOrigins(): string[] {

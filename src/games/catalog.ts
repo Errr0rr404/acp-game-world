@@ -545,6 +545,17 @@ export const games: GameListing[] = [
     poster: "/posters/keylane.jpg",
     controls: "Type, or tap the letters",
     soonReason: null,
+  },
+  {
+    slug: "cinder-grid",
+    title: "Cinder Grid",
+    genre: "Action",
+    tagline: "Place a cinder bomb, clear the crates, and be the last figure in the kiln.",
+    status: "playable",
+    origin: "https://cinder-grid.liveapps.dev",
+    poster: "/posters/cinder-grid.jpg",
+    controls: "WASD and Space, or arrows and Enter",
+    soonReason: null,
   }
 ];
 

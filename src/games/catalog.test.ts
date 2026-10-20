@@ -77,6 +77,7 @@ describe("catalog", () => {
     expect(frameSrc(getGame("ring-drop")!)).toBe("https://ring-drop.liveapps.dev/?hub=1");
     expect(frameSrc(getGame("putt-yard")!)).toBe("https://putt-yard.liveapps.dev/?hub=1");
     expect(frameSrc(getGame("keylane")!)).toBe("https://keylane.liveapps.dev/?hub=1");
+    expect(frameSrc(getGame("cinder-grid")!)).toBe("https://cinder-grid.liveapps.dev/?hub=1");
     expect(getGame("missing")).toBeUndefined();
     expect(games.filter((game) => game.status === "playable")).toHaveLength(9);
   });
