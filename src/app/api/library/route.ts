@@ -11,9 +11,9 @@ async function knownSlug(slug: string): Promise<boolean> {
 
 export async function GET() {
   const session = await getSession();
-  if (!session) return Response.json({ ok: false }, { status: 401 });
+  if (!session) return Response.json({ ok: true, signedIn: false, saved: [] });
   try {
-    return Response.json({ ok: true, saved: await savedSlugsForUser(session.user.id) });
+    return Response.json({ ok: true, signedIn: true, saved: await savedSlugsForUser(session.user.id) });
   } catch (error) {
     console.error("saved games could not be read", error);
     return Response.json({ ok: false }, { status: 503 });

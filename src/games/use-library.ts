@@ -67,14 +67,14 @@ function snapshot(): LocalLibrary {
 async function syncAccountLibrary() {
   try {
     const response = await fetch("/api/library", { headers: { accept: "application/json" } });
-    if (response.status === 401) {
+    if (!response.ok) return;
+    const body = await response.json() as { signedIn?: unknown; saved?: unknown };
+    if (body.signedIn === false) {
       signedIn = false;
       accountSaved = null;
       window.dispatchEvent(new Event(CHANGE_EVENT));
       return;
     }
-    if (!response.ok) return;
-    const body = await response.json() as { saved?: unknown };
     const server = Array.isArray(body.saved) ? body.saved.filter((slug): slug is string => typeof slug === "string") : [];
     const extras = readLocal().saved.filter((slug) => !server.includes(slug));
     let saved = server;
