@@ -1,0 +1,61 @@
+/* Game World tokens. The shelf still reads --background, --muted and --mint. */
+
+:root {
+  --bg: #101426;
+  --surface: #191f36;
+  --surface-raised: #222a44;
+  --border: #303852;
+  --text: #f4f6ff;
+  --text-muted: #acb5d0;
+  --accent: #b8a5ff;
+  --accent-2: #91e4c3;
+  --success: #91e4c3;
+  --warning: #eac489;
+  --danger: #f3adbd;
+  --focus: #b8a5ff;
+
+  --text-display: clamp(54px, 6.5vw, 88px);
+  --text-title-l: clamp(30px, 3vw, 42px);
+  --text-title-m: 27px;
+  --text-title-s: 15px;
+  --text-body: 15px;
+  --text-body-s: 14px;
+  --text-label: 13px;
+  --text-caption: 12px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --elevation-raised: 0 0 0 1px var(--border);
+  --elevation-overlay: 0 10px 35px #080d1a;
+
+  --background: var(--bg);
+  --muted: var(--text-muted);
+  --mint: var(--accent-2);
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}

@@ -41,7 +41,8 @@ describe("game discovery", () => {
       [{ ...games[0]!, slug: "soon-game", title: "Bots", tagline: "bots", genre: "Action", status: "soon", origin: null, soonReason: "Later." }],
       { query: "bots", genre: "Action", status: "soon" },
     ).map((game) => game.slug)).toEqual(["soon-game"]);
-    expect(filterGames(games, { query: "", genre: "Racing", status: "soon" }).map((game) => game.slug)).toEqual(["monster-haul"]);
+    expect(filterGames(games, { query: "", genre: "Racing", status: "playable" }).map((game) => game.slug)).toEqual(["velocity", "stunt-ridge", "monster-haul", "glass-run", "keylane"]);
+    expect(filterGames(games, { query: "", genre: "Racing", status: "soon" })).toEqual([]);
     expect(filterGames(games, { query: "missing", genre: "all", status: "all" })).toEqual([]);
     expect(filterGames([{ ...games[0]!, origin: null }], { query: "", genre: "all", status: "playable" })).toEqual([]);
   });

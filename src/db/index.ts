@@ -4,7 +4,10 @@ import mysql from "mysql2/promise";
 import type { ResultSetHeader } from "mysql2";
 import { GAME_GENRES, games, isHttpsOrigin, type GameGenre, type GameListing } from "@/games/catalog";
 import { approvedOrigins } from "@/games/policy";
+import { CATALOG_TTL_MS, createCatalogLoader } from "./catalog-cache";
+import { installPoolGuards, SESSION_LIMITS_SQL } from "./pool-guard";
 import * as schema from "./schema";
+import { seedBuiltinGames } from "./seed";
 
 const globalForDb = globalThis as unknown as { pool?: mysql.Pool };
 
@@ -15,18 +18,22 @@ export function getPool(): mysql.Pool | null {
     const pool = mysql.createPool({
       uri: url,
       connectionLimit: 5,
+      queueLimit: 50,
       connectTimeout: 4000,
       idleTimeout: 30_000,
       enableKeepAlive: true,
       timezone: "Z",
     });
+    installPoolGuards(pool);
     pool.on("connection", (connection) => {
       // The pool event hands over the callback connection, not the promise API.
+      // max_execution_time covers SELECTs. innodb_lock_wait_timeout covers writes
+      // that are stuck waiting on a row lock. The client timeout covers the rest.
       const query = connection.query as unknown as (
         sql: string,
         callback: (error: Error | null) => void,
       ) => void;
-      query.call(connection, "SET SESSION max_execution_time = 5000", () => undefined);
+      query.call(connection, SESSION_LIMITS_SQL, () => undefined);
     });
     globalForDb.pool = pool;
   }
@@ -131,17 +138,21 @@ const SCHEMA_STATEMENTS = [
     )`,
 ];
 
+/** Schema and the one-time catalog seed. A failed attempt is retried on the next call. */
+export async function prepareDatabase(pool: mysql.Pool): Promise<void> {
+  for (const statement of SCHEMA_STATEMENTS) await pool.query(statement);
+  const [columns] = await pool.query<mysql.RowDataPacket[]>(
+    `SELECT 1 AS present FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_listing' AND COLUMN_NAME = 'genre' LIMIT 1`,
+  );
+  if (columns.length === 0) await pool.query("ALTER TABLE `game_listing` ADD COLUMN genre varchar(64) NULL");
+  await seedBuiltinGames((sql, values) => pool.query(sql, values as never));
+}
+
 export function ensureSchema(): Promise<void> {
   const pool = getPool();
   if (!pool) return Promise.resolve();
-  schemaReady ??= (async () => {
-    for (const statement of SCHEMA_STATEMENTS) await pool.query(statement);
-    const [columns] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT 1 AS present FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_listing' AND COLUMN_NAME = 'genre' LIMIT 1`,
-    );
-    if (columns.length === 0) await pool.query("ALTER TABLE `game_listing` ADD COLUMN genre varchar(64) NULL");
-  })().catch((error: unknown) => {
+  schemaReady ??= prepareDatabase(pool).catch((error: unknown) => {
     schemaReady = null;
     throw error;
   });
@@ -159,38 +170,37 @@ function publishable(game: GameListing): GameListing {
   };
 }
 
-export async function loadGames(): Promise<GameListing[]> {
+async function readCatalog(): Promise<GameListing[]> {
   const db = getDb();
   if (!db) return games.map(publishable);
+  await ensureSchema();
+  const rows = await db.select().from(schema.gameListing).orderBy(schema.gameListing.sort);
+  if (rows.length === 0) return games.map(publishable);
+  return rows.map((row) =>
+    publishable({
+      slug: row.slug,
+      title: row.title,
+      genre: GAME_GENRES.includes(row.genre as GameGenre) ? row.genre as GameGenre : undefined,
+      tagline: row.tagline,
+      status: row.status === "playable" ? "playable" : "soon",
+      origin: row.origin,
+      poster: row.poster,
+      controls: row.controls,
+      soonReason: row.soonReason,
+    }),
+  );
+}
+
+const catalog = createCatalogLoader(readCatalog, CATALOG_TTL_MS);
+
+export function invalidateCatalogCache(): void {
+  catalog.invalidate();
+}
+
+export async function loadGames(): Promise<GameListing[]> {
+  if (!getDb()) return games.map(publishable);
   try {
-    await ensureSchema();
-    await db.insert(schema.gameListing).values(games.map((game, sort) => ({
-      slug: game.slug,
-      title: game.title,
-      tagline: game.tagline,
-      status: game.status,
-      origin: game.origin,
-      poster: game.poster,
-      controls: game.controls,
-      soonReason: game.soonReason,
-      sort,
-      genre: game.genre,
-    }))).onDuplicateKeyUpdate({ set: { slug: sql`slug` } });
-    const rows = await db.select().from(schema.gameListing).orderBy(schema.gameListing.sort);
-    if (rows.length === 0) return games.map(publishable);
-    return rows.map((row) =>
-      publishable({
-        slug: row.slug,
-        title: row.title,
-        genre: GAME_GENRES.includes(row.genre as GameGenre) ? row.genre as GameGenre : undefined,
-        tagline: row.tagline,
-        status: row.status === "playable" ? "playable" : "soon",
-        origin: row.origin,
-        poster: row.poster,
-        controls: row.controls,
-        soonReason: row.soonReason,
-      }),
-    );
+    return await catalog.load();
   } catch (error) {
     console.error("game catalog fell back to the built-in list", error);
     return games.map(publishable);
@@ -302,4 +312,5 @@ export async function saveListing(input: {
         soonReason: input.soonReason,
       },
     });
+  invalidateCatalogCache();
 }

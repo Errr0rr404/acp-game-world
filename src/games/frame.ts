@@ -47,6 +47,27 @@ export function allowsFrame(headers: FrameHeaders, ancestorOrigin: string): bool
 
 export type FramePermission = "allowed" | "blocked" | "unreachable";
 
+/** How long a framing verdict is reused. The key is the game origin plus the hub origin. */
+export const FRAME_PERMISSION_TTL_MS = 60_000;
+
+type FrameCacheEntry = { at: number; permission: FramePermission };
+
+const frameCache = new Map<string, FrameCacheEntry>();
+const frameInflight = new Map<string, Promise<FramePermission>>();
+
+export function clearFramePermissionCache(): void {
+  frameCache.clear();
+  frameInflight.clear();
+}
+
+function frameCacheKey(src: string, ancestor: string): string {
+  try {
+    return `${new URL(src).origin}\n${ancestor.toLowerCase()}`;
+  } catch {
+    return `${src}\n${ancestor.toLowerCase()}`;
+  }
+}
+
 export function ancestorOrigin(headerList: { get(name: string): string | null }): string {
   const host = (headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "127.0.0.1:3000")
     .split(",")[0]
@@ -57,8 +78,7 @@ export function ancestorOrigin(headerList: { get(name: string): string | null })
   return `${proto}://${host}`;
 }
 
-/** Reads the game's own framing headers. The browser will not let the page do this itself. */
-export async function readFramePermission(src: string, ancestor: string): Promise<FramePermission> {
+async function fetchFramePermission(src: string, ancestor: string): Promise<FramePermission> {
   try {
     const response = await fetch(src, {
       redirect: "follow",
@@ -79,4 +99,22 @@ export async function readFramePermission(src: string, ancestor: string): Promis
   } catch {
     return "unreachable";
   }
+}
+
+/** Reads the game's own framing headers. The browser will not let the page do this itself. */
+export async function readFramePermission(src: string, ancestor: string): Promise<FramePermission> {
+  const key = frameCacheKey(src, ancestor);
+  const cached = frameCache.get(key);
+  // Monotonic timer. Date.now() is rejected while Next prerenders this route.
+  if (cached && performance.now() - cached.at < FRAME_PERMISSION_TTL_MS) return cached.permission;
+  const inflight = frameInflight.get(key);
+  if (inflight) return inflight;
+  const request = fetchFramePermission(src, ancestor).then((permission) => {
+    frameCache.set(key, { at: performance.now(), permission });
+    return permission;
+  }).finally(() => {
+    frameInflight.delete(key);
+  });
+  frameInflight.set(key, request);
+  return request;
 }

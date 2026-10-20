@@ -52,6 +52,12 @@ function createAuth(db: NonNullable<ReturnType<typeof getDb>>, secret: string) {
       "https://game.agentcontrolpanel.dev",
     ],
     database: drizzleAdapter(db, { provider: "mysql", schema }),
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60,
+      },
+    },
     user: {
       additionalFields: {
         over13: { type: "boolean", required: false, defaultValue: false, input: false },

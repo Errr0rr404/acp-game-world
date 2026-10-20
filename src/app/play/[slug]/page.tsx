@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getSession } from "@/auth";
 import { PlayFrame } from "@/components/PlayFrame";
-import { frameSrc, games, playSrc } from "@/games/catalog";
+import { frameSrc, playSrc } from "@/games/catalog";
 import { ancestorOrigin, readFramePermission } from "@/games/frame";
 import { loadGames } from "@/db";
 
@@ -14,7 +14,7 @@ type PlayPageProps = {
 
 export async function generateMetadata({ params }: PlayPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const game = games.find((item) => item.slug === slug);
+  const game = (await loadGames()).find((item) => item.slug === slug);
   return {
     title: game?.title ?? "Game",
     description: game?.tagline,
