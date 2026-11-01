@@ -44,3 +44,33 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# added before MacBook reset 2026-11-01
+node_modules/
+dist/
+out/
+.next/
+.turbo/
+.cache/
+coverage/
+*.log
+.env
+.env.*
+!.env.sample
+.venv/
+venv/
+__pycache__/
+*.p12
+*.keystore
+*.jks
+*.mobileprovision
+.secrets/
+*.dmg
+*.exe
+*.pkg
+*.apk
+*.aab
+*.ipa
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.playwright-mcp/
